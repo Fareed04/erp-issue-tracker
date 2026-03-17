@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Issue, CreateIssuePayload, IssueType, IssueStatus, IssuePriority } from '../types';
-import { X, Save, Trash2 } from 'lucide-react';
+import { Issue, CreateIssuePayload, IssueType, IssueStatus, IssuePriority, UserProfile } from '../types';
+import { X, Save, Trash2, User } from 'lucide-react';
+import * as api from '../services/api';
 
 interface IssueModalProps {
   isOpen: boolean;
@@ -12,16 +13,30 @@ interface IssueModalProps {
 
 export const IssueModal: React.FC<IssueModalProps> = ({ isOpen, onClose, onSave, onDelete, issue }) => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [formData, setFormData] = useState<CreateIssuePayload>({
+  const [users, setUsers] = useState<UserProfile[]>([]);
+  const [formData, setFormData] = useState<any>({
     title: '',
     description: '',
     type: 'task',
     status: 'todo',
     priority: 'medium',
-    assignee: '',
-    reporter: '',
+    assigneeUid: '',
+    assigneeName: '',
+    assigneePhoto: '',
     delay_cause: '',
   });
+
+  useEffect(() => {
+    const loadUsers = async () => {
+      try {
+        const profiles = await api.getAllUserProfiles();
+        setUsers(profiles);
+      } catch (err) {
+        console.error('Failed to load users', err);
+      }
+    };
+    if (isOpen) loadUsers();
+  }, [isOpen]);
 
   useEffect(() => {
     if (issue) {
@@ -31,8 +46,9 @@ export const IssueModal: React.FC<IssueModalProps> = ({ isOpen, onClose, onSave,
         type: issue.type,
         status: issue.status,
         priority: issue.priority,
-        assignee: issue.assignee || '',
-        reporter: issue.reporter || '',
+        assigneeUid: issue.assigneeUid || '',
+        assigneeName: issue.assigneeName || '',
+        assigneePhoto: issue.assigneePhoto || '',
         delay_cause: issue.delay_cause || '',
       });
     } else {
@@ -42,8 +58,9 @@ export const IssueModal: React.FC<IssueModalProps> = ({ isOpen, onClose, onSave,
         type: 'task',
         status: 'todo',
         priority: 'medium',
-        assignee: '',
-        reporter: '',
+        assigneeUid: '',
+        assigneeName: '',
+        assigneePhoto: '',
         delay_cause: '',
       });
     }
@@ -51,6 +68,25 @@ export const IssueModal: React.FC<IssueModalProps> = ({ isOpen, onClose, onSave,
   }, [issue, isOpen]);
 
   if (!isOpen) return null;
+
+  const handleAssigneeChange = (uid: string) => {
+    const selectedUser = users.find(u => u.uid === uid);
+    if (selectedUser) {
+      setFormData({
+        ...formData,
+        assigneeUid: selectedUser.uid,
+        assigneeName: selectedUser.displayName,
+        assigneePhoto: selectedUser.photoURL,
+      });
+    } else {
+      setFormData({
+        ...formData,
+        assigneeUid: '',
+        assigneeName: '',
+        assigneePhoto: '',
+      });
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -171,28 +207,18 @@ export const IssueModal: React.FC<IssueModalProps> = ({ isOpen, onClose, onSave,
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Assignee</label>
-                <input
-                  type="text"
-                  value={formData.assignee || ''}
-                  onChange={e => setFormData({ ...formData, assignee: e.target.value })}
-                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-tawny-port focus:border-tawny-port outline-none transition-all"
-                  placeholder="e.g. John Doe"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Reporter</label>
-                <input
-                  type="text"
-                  value={formData.reporter || ''}
-                  onChange={e => setFormData({ ...formData, reporter: e.target.value })}
-                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-tawny-port focus:border-tawny-port outline-none transition-all"
-                  placeholder="e.g. Jane Smith"
-                />
-              </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Assignee</label>
+              <select
+                value={formData.assigneeUid}
+                onChange={e => handleAssigneeChange(e.target.value)}
+                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-tawny-port focus:border-tawny-port outline-none transition-all bg-white"
+              >
+                <option value="">Unassigned</option>
+                {users.map(u => (
+                  <option key={u.uid} value={u.uid}>{u.displayName}</option>
+                ))}
+              </select>
             </div>
 
             {formData.status === 'blocked' && (
@@ -243,8 +269,6 @@ export const IssueModal: React.FC<IssueModalProps> = ({ isOpen, onClose, onSave,
             </button>
           </div>
         </div>
-
-
       </div>
     </div>
   );

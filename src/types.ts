@@ -9,11 +9,22 @@ export interface Issue {
   type: IssueType;
   status: IssueStatus;
   priority: IssuePriority;
-  assignee: string | null;
-  reporter: string | null;
+  assigneeUid: string | null;
+  assigneeName: string | null;
+  assigneePhoto: string | null;
+  reporterUid: string;
+  reporterName: string;
+  reporterPhoto: string | null;
   delay_cause: string | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface UserProfile {
+  uid: string;
+  displayName: string;
+  email: string;
+  photoURL: string | null;
 }
 
 export type CreateIssuePayload = Omit<Issue, 'id' | 'created_at' | 'updated_at'>;

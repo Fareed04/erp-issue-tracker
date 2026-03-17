@@ -16,6 +16,10 @@ import * as XLSX from 'xlsx';
 import { FilterBar } from './components/FilterBar';
 import { NotificationCenter, Notification } from './components/NotificationCenter';
 
+import { auth } from './firebase';
+import { useAuthState } from 'react-firebase-hooks/auth';
+import { Auth } from './components/Auth';
+
 const initialFilters: FilterOptions = {
   search: '',
   assignee: '',
@@ -28,6 +32,7 @@ const initialFilters: FilterOptions = {
 };
 
 export default function App() {
+  const [user, authLoading] = useAuthState(auth);
   const [currentView, setCurrentView] = useState<'dashboard' | 'board' | 'list'>('dashboard');
   const [issues, setIssues] = useState<Issue[]>([]);
   const [filters, setFilters] = useState<FilterOptions>(initialFilters);
@@ -38,8 +43,17 @@ export default function App() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    loadIssues();
-  }, []);
+    if (user) {
+      const unsubscribe = api.subscribeToIssues((data) => {
+        setIssues(data);
+        setIsLoading(false);
+      });
+      return () => unsubscribe();
+    } else {
+      setIssues([]);
+      setIsLoading(false);
+    }
+  }, [user]);
 
   useEffect(() => {
     if (issues.length > 0) {
@@ -52,25 +66,12 @@ export default function App() {
           timestamp: Date.now(),
         };
         setNotifications(prev => {
-          // Avoid duplicate notifications for the same count
           if (prev.length > 0 && prev[0].message === newNotif.message) return prev;
           return [newNotif, ...prev].slice(0, 10);
         });
       }
     }
   }, [issues]);
-
-  const loadIssues = async () => {
-    try {
-      setIsLoading(true);
-      const data = await api.fetchIssues();
-      setIssues(data);
-    } catch (error) {
-      console.error('Failed to load issues', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const addNotification = (message: string, type: Notification['type']) => {
     const newNotif: Notification = {
@@ -88,10 +89,10 @@ export default function App() {
       (issue.description?.toLowerCase().includes(filters.search.toLowerCase()) ?? false);
     
     const matchesAssignee = !filters.assignee || 
-      (issue.assignee?.toLowerCase().includes(filters.assignee.toLowerCase()) ?? false);
+      (issue.assigneeName?.toLowerCase().includes(filters.assignee.toLowerCase()) ?? false);
     
     const matchesReporter = !filters.reporter || 
-      (issue.reporter?.toLowerCase().includes(filters.reporter.toLowerCase()) ?? false);
+      (issue.reporterName?.toLowerCase().includes(filters.reporter.toLowerCase()) ?? false);
     
     const matchesStatus = !filters.status || issue.status === filters.status;
     const matchesPriority = !filters.priority || issue.priority === filters.priority;
@@ -111,8 +112,8 @@ export default function App() {
       Type: issue.type,
       Status: issue.status.replace('_', ' '),
       Priority: issue.priority,
-      Assignee: issue.assignee || 'Unassigned',
-      Reporter: issue.reporter || 'N/A',
+      Assignee: issue.assigneeName || 'Unassigned',
+      Reporter: issue.reporterName || 'N/A',
       'Delay Cause': issue.delay_cause || 'N/A',
       'Created At': new Date(issue.created_at).toLocaleString(),
       'Updated At': new Date(issue.updated_at).toLocaleString(),
@@ -122,22 +123,25 @@ export default function App() {
     const worksheet = XLSX.utils.json_to_sheet(exportData);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Issues");
-    
-    // Generate buffer and download
     XLSX.writeFile(workbook, `ERP_Issues_Export_${new Date().toISOString().split('T')[0]}.xlsx`);
     addNotification('Issues exported to Excel successfully.', 'success');
   };
 
   const handleSaveIssue = async (payload: CreateIssuePayload) => {
+    if (!user) return;
     try {
       if (editingIssue) {
-        const updated = await api.updateIssue(editingIssue.id, payload);
-        setIssues(issues.map(i => i.id === updated.id ? updated : i));
-        addNotification(`Issue "${updated.title}" updated.`, 'success');
+        await api.updateIssue(editingIssue.id, payload);
+        addNotification(`Issue updated.`, 'success');
       } else {
-        const created = await api.createIssue(payload);
-        setIssues([created, ...issues]);
-        addNotification(`New issue "${created.title}" created.`, 'success');
+        const fullPayload = {
+          ...payload,
+          reporterUid: user.uid,
+          reporterName: user.displayName || 'Anonymous',
+          reporterPhoto: user.photoURL,
+        };
+        await api.createIssue(fullPayload as any);
+        addNotification(`New issue created.`, 'success');
       }
       setIsModalOpen(false);
       setEditingIssue(null);
@@ -150,7 +154,6 @@ export default function App() {
   const handleDeleteIssue = async (id: string) => {
     try {
       await api.deleteIssue(id);
-      setIssues(issues.filter(i => i.id !== id));
       setIsModalOpen(false);
       setEditingIssue(null);
       addNotification('Issue deleted successfully.', 'info');
@@ -162,8 +165,7 @@ export default function App() {
 
   const handleUpdateStatus = async (id: string, status: IssueStatus) => {
     try {
-      const updated = await api.updateIssue(id, { status });
-      setIssues(issues.map(i => i.id === updated.id ? updated : i));
+      await api.updateIssue(id, { status });
       addNotification(`Status updated to ${status.replace('_', ' ')}.`, 'info');
     } catch (error) {
       console.error('Failed to update status', error);
@@ -174,8 +176,6 @@ export default function App() {
   const handleBulkUpdate = async (payload: BulkUpdatePayload) => {
     try {
       await api.bulkUpdateIssues(payload);
-      // Refresh issues to get updated data
-      await loadIssues();
       addNotification(`Successfully updated ${payload.ids.length} issues.`, 'success');
     } catch (error) {
       console.error('Bulk update failed', error);
@@ -192,6 +192,31 @@ export default function App() {
     setEditingIssue(issue);
     setIsModalOpen(true);
   };
+
+  if (authLoading) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-slate-50">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-tawny-port"></div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="h-screen flex flex-col items-center justify-center bg-slate-50 p-4">
+        <div className="w-full max-w-md bg-white p-8 rounded-2xl shadow-xl border border-slate-200 text-center">
+          <div className="w-16 h-16 bg-tawny-port rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg shadow-tawny-port/20">
+            <span className="text-white font-bold text-2xl">ERP</span>
+          </div>
+          <h1 className="text-2xl font-bold text-slate-900 mb-2">Welcome to ERP Tracker</h1>
+          <p className="text-slate-600 mb-8">Please sign in to manage and track system issues.</p>
+          <div className="flex justify-center">
+            <Auth />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-screen bg-slate-50 font-sans text-erp-black overflow-hidden">
@@ -216,6 +241,8 @@ export default function App() {
             </h1>
           </div>
           <div className="flex items-center gap-2 lg:gap-4">
+            <Auth />
+            <div className="h-8 w-px bg-slate-200 mx-1 hidden sm:block"></div>
             <NotificationCenter 
               notifications={notifications} 
               onDismiss={(id) => setNotifications(prev => prev.filter(n => n.id !== id))} 

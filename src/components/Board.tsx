@@ -3,6 +3,7 @@ import { Issue, IssueStatus } from '../types';
 import { motion } from 'motion/react';
 import { clsx } from 'clsx';
 import { AlertCircle, Clock, CheckCircle2, CircleDashed, MoreVertical } from 'lucide-react';
+import { Avatar } from './Avatar';
 
 interface BoardProps {
   issues: Issue[];
@@ -85,15 +86,14 @@ export const Board: React.FC<BoardProps> = ({ issues, onUpdateStatus, onEditIssu
 
                       <div className="mt-4 flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          {issue.assignee ? (
-                            <div className="w-6 h-6 rounded-full bg-tawny-port/10 text-tawny-port flex items-center justify-center text-xs font-bold" title={issue.assignee}>
-                              {issue.assignee.charAt(0).toUpperCase()}
-                            </div>
+                          {issue.assigneeName ? (
+                            <Avatar name={issue.assigneeName} src={issue.assigneePhoto} size="sm" />
                           ) : (
                             <div className="w-6 h-6 rounded-full bg-slate-100 border border-slate-300 border-dashed flex items-center justify-center text-slate-400 text-xs" title="Unassigned">
                               ?
                             </div>
                           )}
+                          <span className="text-xs text-slate-500 font-medium">{issue.assigneeName || 'Unassigned'}</span>
                         </div>
                         
                         <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity" onClick={e => e.stopPropagation()}>

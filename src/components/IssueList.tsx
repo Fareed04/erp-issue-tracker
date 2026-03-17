@@ -3,6 +3,7 @@ import { Issue, IssueStatus, IssuePriority, BulkUpdatePayload } from '../types';
 import { format } from 'date-fns';
 import { clsx } from 'clsx';
 import { AlertCircle, CheckCircle2, Clock, CircleDashed, CheckSquare, Square, UserPlus, ArrowUpCircle, Layout } from 'lucide-react';
+import { Avatar } from './Avatar';
 
 interface IssueListProps {
   issues: Issue[];
@@ -175,19 +176,24 @@ export const IssueList: React.FC<IssueListProps> = ({ issues, onEditIssue, onBul
                   </span>
                 </td>
                 <td className="px-6 py-4">
-                  {issue.assignee ? (
+                  {issue.assigneeName ? (
                     <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-xs font-bold">
-                        {issue.assignee.charAt(0).toUpperCase()}
-                      </div>
-                      <span className="text-sm text-slate-700">{issue.assignee}</span>
+                      <Avatar name={issue.assigneeName} src={issue.assigneePhoto} size="sm" />
+                      <span className="text-sm text-slate-700">{issue.assigneeName}</span>
                     </div>
                   ) : (
                     <span className="text-sm text-slate-400 italic">Unassigned</span>
                   )}
                 </td>
                 <td className="px-6 py-4">
-                  <span className="text-sm text-slate-700">{issue.reporter || 'N/A'}</span>
+                  {issue.reporterName ? (
+                    <div className="flex items-center gap-2">
+                      <Avatar name={issue.reporterName} src={issue.reporterPhoto} size="sm" />
+                      <span className="text-sm text-slate-700">{issue.reporterName}</span>
+                    </div>
+                  ) : (
+                    <span className="text-sm text-slate-700">N/A</span>
+                  )}
                 </td>
                 <td className="px-6 py-4 text-sm text-slate-500">
                   {format(new Date(issue.created_at), 'MMM d, yyyy')}
