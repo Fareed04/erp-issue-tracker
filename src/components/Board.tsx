@@ -12,17 +12,17 @@ interface BoardProps {
 
 const COLUMNS: { id: IssueStatus; label: string; icon: any; color: string }[] = [
   { id: 'todo', label: 'To Do', icon: CircleDashed, color: 'text-slate-500' },
-  { id: 'in_progress', label: 'In Progress', icon: Clock, color: 'text-blue-500' },
-  { id: 'blocked', label: 'Blocked', icon: AlertCircle, color: 'text-amber-500' },
+  { id: 'in_progress', label: 'In Progress', icon: Clock, color: 'text-peru-tan' },
+  { id: 'blocked', label: 'Blocked', icon: AlertCircle, color: 'text-tawny-port' },
   { id: 'done', label: 'Done', icon: CheckCircle2, color: 'text-emerald-500' },
 ];
 
 export const Board: React.FC<BoardProps> = ({ issues, onUpdateStatus, onEditIssue }) => {
   return (
-    <div className="p-8 h-full flex flex-col">
+    <div className="p-4 lg:p-8 h-full flex flex-col">
       <div className="mb-8 flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold text-slate-900">Kanban Board</h2>
+          <h2 className="text-2xl font-bold text-erp-black">Kanban Board</h2>
           <p className="text-slate-500 mt-1">Manage tasks and track progress.</p>
         </div>
       </div>
@@ -58,9 +58,9 @@ export const Board: React.FC<BoardProps> = ({ issues, onUpdateStatus, onEditIssu
                       <div className="flex justify-between items-start mb-2">
                         <span className={clsx(
                           "text-xs font-medium px-2 py-1 rounded-md uppercase tracking-wider",
-                          issue.type === 'bug' ? 'bg-red-100 text-red-700' :
-                          issue.type === 'task' ? 'bg-blue-100 text-blue-700' :
-                          'bg-purple-100 text-purple-700'
+                          issue.type === 'bug' ? 'bg-tawny-port/10 text-tawny-port' :
+                          issue.type === 'task' ? 'bg-peru-tan/10 text-peru-tan' :
+                          'bg-erp-black/10 text-erp-black'
                         )}>
                           {issue.type}
                         </span>
@@ -74,7 +74,7 @@ export const Board: React.FC<BoardProps> = ({ issues, onUpdateStatus, onEditIssu
                           {issue.priority}
                         </span>
                       </div>
-                      <h4 className="font-medium text-slate-900 mb-2 line-clamp-2">{issue.title}</h4>
+                      <h4 className="font-medium text-erp-black mb-2 line-clamp-2">{issue.title}</h4>
                       
                       {issue.status === 'blocked' && issue.delay_cause && (
                         <div className="mt-3 p-2 bg-amber-50 rounded text-xs text-amber-800 border border-amber-100 flex items-start gap-1.5">
@@ -86,7 +86,7 @@ export const Board: React.FC<BoardProps> = ({ issues, onUpdateStatus, onEditIssu
                       <div className="mt-4 flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           {issue.assignee ? (
-                            <div className="w-6 h-6 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-xs font-bold" title={issue.assignee}>
+                            <div className="w-6 h-6 rounded-full bg-tawny-port/10 text-tawny-port flex items-center justify-center text-xs font-bold" title={issue.assignee}>
                               {issue.assignee.charAt(0).toUpperCase()}
                             </div>
                           ) : (

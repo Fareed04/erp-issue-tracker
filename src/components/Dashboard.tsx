@@ -7,7 +7,7 @@ interface DashboardProps {
   issues: Issue[];
 }
 
-const COLORS = ['#3b82f6', '#ef4444', '#f59e0b', '#10b981'];
+const COLORS = ['#74253A', '#7B5203', '#000000', '#10b981'];
 
 export const Dashboard: React.FC<DashboardProps> = ({ issues }) => {
   const stats = useMemo(() => {
@@ -44,16 +44,16 @@ export const Dashboard: React.FC<DashboardProps> = ({ issues }) => {
   }, [issues]);
 
   return (
-    <div className="p-8 space-y-8">
+    <div className="p-4 lg:p-8 space-y-8">
       <div>
-        <h2 className="text-2xl font-bold text-slate-900">Dashboard Overview</h2>
+        <h2 className="text-2xl font-bold text-erp-black">Dashboard Overview</h2>
         <p className="text-slate-500 mt-1">Track your ERP system's health and progress.</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard title="Total Items" value={stats.total} icon={ListTodo} color="bg-blue-500" />
-        <StatCard title="Active Bugs" value={stats.bugs} icon={AlertTriangle} color="bg-red-500" />
-        <StatCard title="Blocked" value={stats.blocked} icon={Clock} color="bg-amber-500" />
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <StatCard title="Total Items" value={stats.total} icon={ListTodo} color="bg-erp-black" />
+        <StatCard title="Active Bugs" value={stats.bugs} icon={AlertTriangle} color="bg-tawny-port" />
+        <StatCard title="Blocked" value={stats.blocked} icon={Clock} color="bg-peru-tan" />
         <StatCard title="Completed" value={stats.done} icon={CheckCircle2} color="bg-emerald-500" />
       </div>
 
@@ -67,11 +67,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ issues }) => {
                 <XAxis dataKey="name" axisLine={false} tickLine={false} />
                 <YAxis axisLine={false} tickLine={false} />
                 <Tooltip cursor={{fill: '#f8fafc'}} />
-                <Bar dataKey="value" fill="#6366f1" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="value" fill="#74253A" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
+
 
         <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
           <h3 className="text-lg font-semibold text-slate-800 mb-4">Items by Type</h3>

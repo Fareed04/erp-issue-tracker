@@ -1,13 +1,15 @@
 import React from 'react';
-import { LayoutDashboard, KanbanSquare, List } from 'lucide-react';
+import { LayoutDashboard, KanbanSquare, List, X } from 'lucide-react';
 import { clsx } from 'clsx';
 
 interface SidebarProps {
   currentView: 'dashboard' | 'board' | 'list';
   onViewChange: (view: 'dashboard' | 'board' | 'list') => void;
+  isOpen: boolean;
+  onClose: () => void;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange }) => {
+export const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange, isOpen, onClose }) => {
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'board', label: 'Kanban Board', icon: KanbanSquare },
@@ -15,34 +17,54 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange }) =
   ] as const;
 
   return (
-    <aside className="w-64 bg-slate-900 text-slate-300 flex flex-col h-full shrink-0">
-      <div className="p-6">
-        <h1 className="text-xl font-bold text-white flex items-center gap-2">
-          <div className="w-8 h-8 bg-indigo-500 rounded-lg flex items-center justify-center">
-            <span className="text-white font-bold">ERP</span>
-          </div>
-          Tracker
-        </h1>
-      </div>
-      <nav className="flex-1 px-4 space-y-2">
-        {navItems.map(item => {
-          const Icon = item.icon;
-          const isActive = currentView === item.id;
-          return (
-            <button
-              key={item.id}
-              onClick={() => onViewChange(item.id)}
-              className={clsx(
-                "w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-sm font-medium",
-                isActive ? "bg-indigo-600 text-white" : "hover:bg-slate-800 hover:text-white"
-              )}
-            >
-              <Icon size={18} />
-              {item.label}
-            </button>
-          );
-        })}
-      </nav>
-    </aside>
+    <>
+      {/* Mobile Overlay */}
+      {isOpen && (
+        <div 
+          className="fixed inset-0 bg-slate-900/50 z-40 lg:hidden backdrop-blur-sm"
+          onClick={onClose}
+        />
+      )}
+
+      <aside className={clsx(
+        "fixed inset-y-0 left-0 w-64 bg-erp-black text-slate-300 flex flex-col h-full z-50 transition-transform duration-300 lg:relative lg:translate-x-0 shrink-0",
+        isOpen ? "translate-x-0" : "-translate-x-full"
+      )}>
+        <div className="p-6 flex items-center justify-between">
+          <h1 className="text-xl font-bold text-white flex items-center gap-2">
+            <div className="w-8 h-8 bg-tawny-port rounded-lg flex items-center justify-center">
+              <span className="text-white font-bold">ERP</span>
+            </div>
+            Tracker
+          </h1>
+          <button onClick={onClose} className="lg:hidden p-2 hover:bg-slate-800 rounded-lg">
+            <X size={20} />
+          </button>
+        </div>
+        <nav className="flex-1 px-4 space-y-2">
+          {navItems.map(item => {
+            const Icon = item.icon;
+            const isActive = currentView === item.id;
+            return (
+              <button
+                key={item.id}
+                onClick={() => {
+                  onViewChange(item.id);
+                  onClose();
+                }}
+                className={clsx(
+                  "w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-sm font-medium",
+                  isActive ? "bg-tawny-port text-white shadow-lg shadow-tawny-port/20" : "hover:bg-slate-800 hover:text-white"
+                )}
+              >
+                <Icon size={18} />
+                {item.label}
+              </button>
+            );
+          })}
+        </nav>
+      </aside>
+    </>
   );
 };
+

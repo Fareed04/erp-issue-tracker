@@ -10,9 +10,28 @@ export interface Issue {
   status: IssueStatus;
   priority: IssuePriority;
   assignee: string | null;
+  reporter: string | null;
   delay_cause: string | null;
   created_at: string;
   updated_at: string;
 }
 
 export type CreateIssuePayload = Omit<Issue, 'id' | 'created_at' | 'updated_at'>;
+
+export interface BulkUpdatePayload {
+  ids: string[];
+  status?: IssueStatus;
+  priority?: IssuePriority;
+  assignee?: string;
+}
+
+export interface FilterOptions {
+  search: string;
+  assignee: string;
+  reporter: string;
+  status: string;
+  priority: string;
+  type: string;
+  startDate: string;
+  endDate: string;
+}

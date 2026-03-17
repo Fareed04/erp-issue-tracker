@@ -1,1 +1,13 @@
 @import "tailwindcss";
+
+@theme {
+  --color-tawny-port: #74253A;
+  --color-peru-tan: #7B5203;
+  --color-erp-black: #000000;
+}
+
+@layer base {
+  body {
+    @apply bg-slate-50 text-erp-black;
+  }
+}
