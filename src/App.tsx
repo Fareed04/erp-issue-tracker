@@ -250,19 +250,19 @@ export default function App() {
             <div className="h-8 w-px bg-slate-200 mx-1 hidden sm:block"></div>
             <button
               onClick={handleExportToExcel}
-              className="flex items-center gap-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 px-3 lg:px-4 py-2 rounded-lg text-sm lg:text-base font-medium transition-colors shadow-sm"
+              className="flex items-center justify-center gap-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 w-10 h-10 sm:w-auto sm:px-3 lg:px-4 sm:py-2 rounded-lg text-sm lg:text-base font-medium transition-colors shadow-sm shrink-0"
               title="Export to Excel"
             >
               <Download size={18} />
-              <span className="hidden md:inline">Export</span>
+              <span className="hidden sm:inline">Export</span>
             </button>
             <button
               onClick={openNewIssueModal}
-              className="flex items-center gap-2 bg-tawny-port hover:bg-tawny-port/90 text-white px-3 lg:px-4 py-2 rounded-lg text-sm lg:text-base font-medium transition-colors shadow-sm"
+              className="flex items-center justify-center gap-2 bg-tawny-port hover:bg-tawny-port/90 text-white w-10 h-10 sm:w-auto sm:px-3 lg:px-4 sm:py-2 rounded-lg text-sm lg:text-base font-medium transition-colors shadow-sm shrink-0"
+              title="New Issue"
             >
               <Plus size={18} />
               <span className="hidden sm:inline">New Issue</span>
-              <span className="sm:hidden">New</span>
             </button>
           </div>
         </header>

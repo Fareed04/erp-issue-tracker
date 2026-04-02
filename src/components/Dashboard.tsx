@@ -58,14 +58,14 @@ export const Dashboard: React.FC<DashboardProps> = ({ issues }) => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+        <div className="bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-slate-200 min-w-0">
           <h3 className="text-lg font-semibold text-slate-800 mb-4">Items by Status</h3>
           <div className="h-72">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={statusData}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} />
-                <YAxis axisLine={false} tickLine={false} />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fontSize: 12}} />
+                <YAxis axisLine={false} tickLine={false} tick={{fontSize: 12}} width={30} />
                 <Tooltip cursor={{fill: '#f8fafc'}} />
                 <Bar dataKey="value" fill="#74253A" radius={[4, 4, 0, 0]} />
               </BarChart>
@@ -74,7 +74,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ issues }) => {
         </div>
 
 
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+        <div className="bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-slate-200 min-w-0">
           <h3 className="text-lg font-semibold text-slate-800 mb-4">Items by Type</h3>
           <div className="h-72">
             <ResponsiveContainer width="100%" height="100%">
@@ -95,10 +95,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ issues }) => {
                 <Tooltip />
               </PieChart>
             </ResponsiveContainer>
-            <div className="flex justify-center gap-6 mt-4">
+            <div className="flex justify-center gap-4 sm:gap-6 mt-4 flex-wrap">
               {typeData.map((entry, index) => (
                 <div key={entry.name} className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
+                  <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
                   <span className="text-sm text-slate-600">{entry.name}</span>
                 </div>
               ))}

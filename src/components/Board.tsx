@@ -28,14 +28,14 @@ export const Board: React.FC<BoardProps> = ({ issues, onUpdateStatus, onEditIssu
         </div>
       </div>
 
-      <div className="flex-1 overflow-x-auto">
-        <div className="flex gap-6 min-w-max h-full pb-4">
+      <div className="flex-1 overflow-x-auto -mx-4 px-4 lg:mx-0 lg:px-0">
+        <div className="flex gap-4 lg:gap-6 min-w-max h-full pb-4">
           {COLUMNS.map(column => {
             const columnIssues = issues.filter(i => i.status === column.id);
             const Icon = column.icon;
 
             return (
-              <div key={column.id} className="w-80 flex flex-col bg-slate-50 rounded-xl border border-slate-200">
+              <div key={column.id} className="w-[280px] lg:w-80 flex flex-col bg-slate-50 rounded-xl border border-slate-200 shrink-0">
                 <div className="p-4 flex items-center justify-between border-b border-slate-200">
                   <div className="flex items-center gap-2">
                     <Icon size={18} className={column.color} />

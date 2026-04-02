@@ -79,9 +79,9 @@ export const FilterBar: React.FC<FilterBarProps> = ({ filters, onFilterChange, o
         </button>
       </div>
 
-      <div className="flex flex-wrap gap-4 items-center pt-2 border-t border-slate-100">
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2">
+      <div className="flex flex-col sm:flex-row flex-wrap gap-4 items-start sm:items-center pt-2 border-t border-slate-100">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 w-full sm:w-auto">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 w-full sm:w-auto">
             <span className="text-xs font-medium text-slate-500 uppercase tracking-wider">Assignee:</span>
             <input
               type="text"
@@ -89,10 +89,10 @@ export const FilterBar: React.FC<FilterBarProps> = ({ filters, onFilterChange, o
               value={filters.assignee}
               onChange={handleChange}
               placeholder="Filter by assignee..."
-              className="px-3 py-1.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-tawny-port outline-none text-sm"
+              className="w-full sm:w-auto px-3 py-1.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-tawny-port outline-none text-sm"
             />
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 w-full sm:w-auto">
             <span className="text-xs font-medium text-slate-500 uppercase tracking-wider">Reporter:</span>
             <input
               type="text"
@@ -100,19 +100,19 @@ export const FilterBar: React.FC<FilterBarProps> = ({ filters, onFilterChange, o
               value={filters.reporter}
               onChange={handleChange}
               placeholder="Filter by reporter..."
-              className="px-3 py-1.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-tawny-port outline-none text-sm"
+              className="w-full sm:w-auto px-3 py-1.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-tawny-port outline-none text-sm"
             />
           </div>
         </div>
 
-        <div className="flex items-center gap-2 ml-auto">
-          <Calendar size={16} className="text-slate-400" />
+        <div className="flex flex-wrap items-center gap-2 sm:ml-auto w-full sm:w-auto">
+          <Calendar size={16} className="text-slate-400 hidden sm:block" />
           <input
             type="date"
             name="startDate"
             value={filters.startDate}
             onChange={handleChange}
-            className="px-2 py-1.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-tawny-port outline-none text-sm"
+            className="flex-1 sm:flex-none px-2 py-1.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-tawny-port outline-none text-sm min-w-[120px]"
           />
           <span className="text-slate-400 text-sm">to</span>
           <input
@@ -120,7 +120,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({ filters, onFilterChange, o
             name="endDate"
             value={filters.endDate}
             onChange={handleChange}
-            className="px-2 py-1.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-tawny-port outline-none text-sm"
+            className="flex-1 sm:flex-none px-2 py-1.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-tawny-port outline-none text-sm min-w-[120px]"
           />
         </div>
       </div>

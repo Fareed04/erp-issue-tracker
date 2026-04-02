@@ -48,7 +48,7 @@ export const IssueList: React.FC<IssueListProps> = ({ issues, onEditIssue, onBul
   return (
     <div className="p-4 lg:p-8">
       {selectedIds.length > 0 && (
-        <div className="mb-6 bg-tawny-port text-white p-4 rounded-xl shadow-lg flex flex-wrap items-center justify-between gap-4 animate-in fade-in slide-in-from-top-4 duration-300">
+        <div className="mb-6 bg-tawny-port text-white p-4 rounded-xl shadow-lg flex flex-col sm:flex-row flex-wrap items-start sm:items-center justify-between gap-4 animate-in fade-in slide-in-from-top-4 duration-300">
           <div className="flex items-center gap-3">
             <div className="bg-white/20 p-2 rounded-lg">
               <CheckSquare size={20} />
@@ -59,31 +59,31 @@ export const IssueList: React.FC<IssueListProps> = ({ issues, onEditIssue, onBul
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center gap-2 w-full sm:w-auto">
             <div className="h-8 w-px bg-white/20 mx-2 hidden md:block"></div>
             
-            <div className="flex items-center gap-2 bg-white/10 p-1 rounded-lg">
-              <span className="text-xs font-medium uppercase tracking-wider px-2 opacity-70">Status</span>
+            <div className="flex flex-wrap items-center gap-2 bg-white/10 p-1 rounded-lg w-full sm:w-auto">
+              <span className="text-xs font-medium uppercase tracking-wider px-2 opacity-70 w-full sm:w-auto">Status</span>
               {(['todo', 'in_progress', 'blocked', 'done'] as IssueStatus[]).map(status => (
                 <button
                   key={status}
                   disabled={isUpdating}
                   onClick={() => handleBulkAction({ status })}
-                  className="px-3 py-1 text-xs font-bold rounded-md hover:bg-white/20 transition-colors capitalize disabled:opacity-50"
+                  className="px-3 py-1 text-xs font-bold rounded-md hover:bg-white/20 transition-colors capitalize disabled:opacity-50 flex-1 sm:flex-none"
                 >
                   {status.replace('_', ' ')}
                 </button>
               ))}
             </div>
 
-            <div className="flex items-center gap-2 bg-white/10 p-1 rounded-lg">
-              <span className="text-xs font-medium uppercase tracking-wider px-2 opacity-70">Priority</span>
+            <div className="flex flex-wrap items-center gap-2 bg-white/10 p-1 rounded-lg w-full sm:w-auto">
+              <span className="text-xs font-medium uppercase tracking-wider px-2 opacity-70 w-full sm:w-auto">Priority</span>
               {(['low', 'medium', 'high', 'critical'] as IssuePriority[]).map(priority => (
                 <button
                   key={priority}
                   disabled={isUpdating}
                   onClick={() => handleBulkAction({ priority })}
-                  className="px-3 py-1 text-xs font-bold rounded-md hover:bg-white/20 transition-colors capitalize disabled:opacity-50"
+                  className="px-3 py-1 text-xs font-bold rounded-md hover:bg-white/20 transition-colors capitalize disabled:opacity-50 flex-1 sm:flex-none"
                 >
                   {priority}
                 </button>
@@ -92,7 +92,7 @@ export const IssueList: React.FC<IssueListProps> = ({ issues, onEditIssue, onBul
 
             <button
               onClick={() => setSelectedIds([])}
-              className="px-4 py-2 text-sm font-medium hover:bg-white/10 rounded-lg transition-colors"
+              className="px-4 py-2 text-sm font-medium hover:bg-white/10 rounded-lg transition-colors w-full sm:w-auto text-center mt-2 sm:mt-0"
             >
               Cancel
             </button>
