@@ -74,9 +74,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ issues }) => {
         </div>
 
 
-        <div className="bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-slate-200 min-w-0">
+        <div className="bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-slate-200 min-w-0 flex flex-col">
           <h3 className="text-lg font-semibold text-slate-800 mb-4">Items by Type</h3>
-          <div className="h-72">
+          <div className="h-64 flex-1">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
@@ -95,14 +95,14 @@ export const Dashboard: React.FC<DashboardProps> = ({ issues }) => {
                 <Tooltip />
               </PieChart>
             </ResponsiveContainer>
-            <div className="flex justify-center gap-4 sm:gap-6 mt-4 flex-wrap">
-              {typeData.map((entry, index) => (
-                <div key={entry.name} className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
-                  <span className="text-sm text-slate-600">{entry.name}</span>
-                </div>
-              ))}
-            </div>
+          </div>
+          <div className="flex justify-center gap-4 sm:gap-6 mt-4 flex-wrap shrink-0">
+            {typeData.map((entry, index) => (
+              <div key={entry.name} className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
+                <span className="text-sm text-slate-600">{entry.name}</span>
+              </div>
+            ))}
           </div>
         </div>
       </div>
