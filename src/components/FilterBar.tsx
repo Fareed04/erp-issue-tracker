@@ -29,13 +29,13 @@ export const FilterBar: React.FC<FilterBarProps> = ({ filters, onFilterChange, o
           />
         </div>
         
-        <div className="flex items-center gap-2">
-          <Filter size={18} className="text-slate-400" />
+        <div className="flex flex-wrap items-center gap-2">
+          <Filter size={18} className="text-slate-400 hidden sm:block" />
           <select
             name="type"
             value={filters.type}
             onChange={handleChange}
-            className="px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-tawny-port outline-none bg-white text-sm"
+            className="flex-1 sm:flex-none px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-tawny-port outline-none bg-white text-sm min-w-[110px]"
           >
             <option value="">All Types</option>
             <option value="task">Task</option>
@@ -47,7 +47,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({ filters, onFilterChange, o
             name="status"
             value={filters.status}
             onChange={handleChange}
-            className="px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-tawny-port outline-none bg-white text-sm"
+            className="flex-1 sm:flex-none px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-tawny-port outline-none bg-white text-sm min-w-[110px]"
           >
             <option value="">All Statuses</option>
             <option value="todo">To Do</option>
@@ -60,7 +60,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({ filters, onFilterChange, o
             name="priority"
             value={filters.priority}
             onChange={handleChange}
-            className="px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-tawny-port outline-none bg-white text-sm"
+            className="flex-1 sm:flex-none px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-tawny-port outline-none bg-white text-sm min-w-[110px]"
           >
             <option value="">All Priorities</option>
             <option value="low">Low</option>
