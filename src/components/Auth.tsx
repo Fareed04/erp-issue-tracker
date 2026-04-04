@@ -64,15 +64,15 @@ export const Auth: React.FC = () => {
 
   const handleLogout = () => signOut(auth);
 
-  if (loading) return <div className="animate-pulse bg-slate-200 h-10 w-24 rounded-lg"></div>;
+  if (loading) return <div className="animate-pulse bg-slate-200 dark:bg-slate-700 h-10 w-24 rounded-lg"></div>;
 
   if (user) {
     return (
       <>
         <div className="flex items-center gap-3">
           <div className="flex flex-col items-end hidden sm:flex">
-            <span className="text-sm font-bold text-slate-900">{user.displayName}</span>
-            <span className="text-xs text-slate-500">{user.email}</span>
+            <span className="text-sm font-bold text-slate-900 dark:text-white">{user.displayName}</span>
+            <span className="text-xs text-slate-500 dark:text-slate-400">{user.email}</span>
           </div>
           <div className="relative group">
             {user.photoURL ? (
@@ -83,25 +83,25 @@ export const Auth: React.FC = () => {
                 referrerPolicy="no-referrer"
               />
             ) : (
-              <div className="w-10 h-10 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold border-2 border-tawny-port cursor-pointer">
+              <div className="w-10 h-10 rounded-full bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 flex items-center justify-center font-bold border-2 border-tawny-port cursor-pointer">
                 {user.displayName?.charAt(0).toUpperCase() || 'U'}
               </div>
             )}
-            <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-slate-200 opacity-0 group-hover:opacity-100 transition-opacity invisible group-hover:visible z-50 overflow-hidden">
-              <div className="p-4 border-b border-slate-100">
-                <p className="font-bold text-slate-900 truncate">{user.displayName}</p>
-                <p className="text-xs text-slate-500 truncate">{user.email}</p>
+            <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-200 dark:border-slate-700 opacity-0 group-hover:opacity-100 transition-opacity invisible group-hover:visible z-50 overflow-hidden">
+              <div className="p-4 border-b border-slate-100 dark:border-slate-700">
+                <p className="font-bold text-slate-900 dark:text-white truncate">{user.displayName}</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{user.email}</p>
               </div>
               <button
                 onClick={openProfileModal}
-                className="w-full flex items-center gap-2 px-4 py-3 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
+                className="w-full flex items-center gap-2 px-4 py-3 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors"
               >
                 <Settings size={16} />
                 Edit Profile
               </button>
               <button
                 onClick={handleLogout}
-                className="w-full flex items-center gap-2 px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors border-t border-slate-100"
+                className="w-full flex items-center gap-2 px-4 py-3 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors border-t border-slate-100 dark:border-slate-700"
               >
                 <LogOut size={16} />
                 Sign Out
@@ -112,31 +112,31 @@ export const Auth: React.FC = () => {
 
         {isProfileModalOpen && (
           <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-            <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
-              <div className="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
-                <h2 className="text-xl font-bold text-slate-800">Edit Profile</h2>
-                <button onClick={() => setIsProfileModalOpen(false)} className="p-2 hover:bg-slate-200 rounded-full text-slate-500 transition-colors">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
+              <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center bg-slate-50 dark:bg-slate-800/50">
+                <h2 className="text-xl font-bold text-slate-800 dark:text-white">Edit Profile</h2>
+                <button onClick={() => setIsProfileModalOpen(false)} className="p-2 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-full text-slate-500 dark:text-slate-400 transition-colors">
                   <X size={20} />
                 </button>
               </div>
               <form onSubmit={handleSaveProfile} className="p-6 space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Display Name</label>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Display Name</label>
                   <input
                     type="text"
                     required
                     value={profileData.displayName}
                     onChange={e => setProfileData({ ...profileData, displayName: e.target.value })}
-                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-tawny-port focus:border-tawny-port outline-none transition-all"
+                    className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-tawny-port focus:border-tawny-port outline-none transition-all bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Avatar URL</label>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Avatar URL</label>
                   <input
                     type="url"
                     value={profileData.photoURL}
                     onChange={e => setProfileData({ ...profileData, photoURL: e.target.value })}
-                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-tawny-port focus:border-tawny-port outline-none transition-all"
+                    className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-tawny-port focus:border-tawny-port outline-none transition-all bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500"
                     placeholder="https://example.com/avatar.png"
                   />
                 </div>
@@ -144,7 +144,7 @@ export const Auth: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setIsProfileModalOpen(false)}
-                    className="px-4 py-2 text-slate-700 hover:bg-slate-200 rounded-lg transition-colors font-medium"
+                    className="px-4 py-2 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors font-medium"
                   >
                     Cancel
                   </button>
@@ -174,7 +174,7 @@ export const Auth: React.FC = () => {
         Sign In
       </button>
       {loginError && (
-        <p className="text-xs text-red-600 font-medium animate-pulse">{loginError}</p>
+        <p className="text-xs text-red-600 dark:text-red-400 font-medium animate-pulse">{loginError}</p>
       )}
     </div>
   );

@@ -15,6 +15,7 @@ import { Plus, Menu, Download } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { FilterBar } from './components/FilterBar';
 import { NotificationCenter, Notification } from './components/NotificationCenter';
+import { ThemeToggle } from './components/ThemeToggle';
 
 import { auth } from './firebase';
 import { useAuthState } from 'react-firebase-hooks/auth';
@@ -195,7 +196,7 @@ export default function App() {
 
   if (authLoading) {
     return (
-      <div className="h-screen flex items-center justify-center bg-slate-50">
+      <div className="h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-tawny-port"></div>
       </div>
     );
@@ -203,13 +204,13 @@ export default function App() {
 
   if (!user) {
     return (
-      <div className="h-screen flex flex-col items-center justify-center bg-slate-50 p-4">
-        <div className="w-full max-w-md bg-white p-8 rounded-2xl shadow-xl border border-slate-200 text-center">
+      <div className="h-screen flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-900 p-4">
+        <div className="w-full max-w-md bg-white dark:bg-slate-800 p-8 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 text-center">
           <div className="w-16 h-16 bg-tawny-port rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg shadow-tawny-port/20">
             <span className="text-white font-bold text-2xl">ERP</span>
           </div>
-          <h1 className="text-2xl font-bold text-slate-900 mb-2">Welcome to ERP Tracker</h1>
-          <p className="text-slate-600 mb-8">Please sign in to manage and track system issues.</p>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Welcome to ERP Tracker</h1>
+          <p className="text-slate-600 dark:text-slate-400 mb-8">Please sign in to manage and track system issues.</p>
           <div className="flex justify-center">
             <Auth />
           </div>
@@ -219,7 +220,7 @@ export default function App() {
   }
 
   return (
-    <div className="flex h-screen bg-slate-50 font-sans text-erp-black overflow-hidden">
+    <div className="flex h-screen bg-slate-50 dark:bg-slate-900 font-sans text-erp-black dark:text-slate-100 overflow-hidden">
       <Sidebar 
         currentView={currentView} 
         onViewChange={setCurrentView} 
@@ -228,29 +229,30 @@ export default function App() {
       />
       
       <main className="flex-1 flex flex-col relative h-full overflow-hidden">
-        <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 lg:px-8 shrink-0">
+        <header className="h-16 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between px-4 lg:px-8 shrink-0">
           <div className="flex items-center gap-4">
             <button 
               onClick={() => setIsSidebarOpen(true)}
-              className="lg:hidden p-2 hover:bg-slate-100 rounded-lg text-slate-600"
+              className="lg:hidden p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg text-slate-600 dark:text-slate-300"
             >
               <Menu size={20} />
             </button>
-            <h1 className="text-lg lg:text-xl font-bold text-erp-black capitalize truncate">
+            <h1 className="text-lg lg:text-xl font-bold text-erp-black dark:text-white capitalize truncate">
               {currentView === 'board' ? 'Kanban Board' : currentView}
             </h1>
           </div>
           <div className="flex items-center gap-2 lg:gap-4">
             <Auth />
-            <div className="h-8 w-px bg-slate-200 mx-1 hidden sm:block"></div>
+            <div className="h-8 w-px bg-slate-200 dark:bg-slate-700 mx-1 hidden sm:block"></div>
+            <ThemeToggle />
             <NotificationCenter 
               notifications={notifications} 
               onDismiss={(id) => setNotifications(prev => prev.filter(n => n.id !== id))} 
             />
-            <div className="h-8 w-px bg-slate-200 mx-1 hidden sm:block"></div>
+            <div className="h-8 w-px bg-slate-200 dark:bg-slate-700 mx-1 hidden sm:block"></div>
             <button
               onClick={handleExportToExcel}
-              className="flex items-center justify-center gap-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 w-10 h-10 sm:w-auto sm:px-3 lg:px-4 sm:py-2 rounded-lg text-sm lg:text-base font-medium transition-colors shadow-sm shrink-0"
+              className="flex items-center justify-center gap-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 w-10 h-10 sm:w-auto sm:px-3 lg:px-4 sm:py-2 rounded-lg text-sm lg:text-base font-medium transition-colors shadow-sm shrink-0"
               title="Export to Excel"
             >
               <Download size={18} />

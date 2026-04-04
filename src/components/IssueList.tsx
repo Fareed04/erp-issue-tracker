@@ -100,12 +100,12 @@ export const IssueList: React.FC<IssueListProps> = ({ issues, onEditIssue, onBul
         </div>
       )}
 
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-x-auto">
+      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-x-auto">
         <table className="w-full text-left border-collapse min-w-[800px]">
           <thead>
-            <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 text-sm font-medium">
+            <tr className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 text-sm font-medium">
               <th className="px-6 py-4 w-12">
-                <button onClick={toggleSelectAll} className="text-slate-400 hover:text-tawny-port transition-colors">
+                <button onClick={toggleSelectAll} className="text-slate-400 dark:text-slate-500 hover:text-tawny-port dark:hover:text-tawny-port transition-colors">
                   {selectedIds.length === issues.length && issues.length > 0 ? <CheckSquare size={20} className="text-tawny-port" /> : <Square size={20} />}
                 </button>
               </th>
@@ -118,25 +118,25 @@ export const IssueList: React.FC<IssueListProps> = ({ issues, onEditIssue, onBul
               <th className="px-6 py-4">Created</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-200">
+          <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
             {issues.map(issue => (
               <tr 
                 key={issue.id} 
                 className={clsx(
-                  "hover:bg-slate-50 cursor-pointer transition-colors",
-                  selectedIds.includes(issue.id) && "bg-slate-50"
+                  "hover:bg-slate-50 dark:hover:bg-slate-700/50 cursor-pointer transition-colors",
+                  selectedIds.includes(issue.id) && "bg-slate-50 dark:bg-slate-700/50"
                 )}
                 onClick={() => onEditIssue(issue)}
               >
                 <td className="px-6 py-4" onClick={(e) => toggleSelect(issue.id, e)}>
-                  <button className="text-slate-400 hover:text-tawny-port transition-colors">
+                  <button className="text-slate-400 dark:text-slate-500 hover:text-tawny-port dark:hover:text-tawny-port transition-colors">
                     {selectedIds.includes(issue.id) ? <CheckSquare size={20} className="text-tawny-port" /> : <Square size={20} />}
                   </button>
                 </td>
                 <td className="px-6 py-4">
-                  <div className="font-medium text-erp-black">{issue.title}</div>
+                  <div className="font-medium text-erp-black dark:text-white">{issue.title}</div>
                   {issue.delay_cause && issue.status === 'blocked' && (
-                    <div className="text-xs text-tawny-port mt-1 flex items-center gap-1">
+                    <div className="text-xs text-tawny-port dark:text-red-400 mt-1 flex items-center gap-1">
                       <AlertCircle size={12} />
                       {issue.delay_cause}
                     </div>
@@ -145,20 +145,20 @@ export const IssueList: React.FC<IssueListProps> = ({ issues, onEditIssue, onBul
                 <td className="px-6 py-4">
                   <span className={clsx(
                     "text-xs font-medium px-2 py-1 rounded-md uppercase tracking-wider",
-                    issue.type === 'bug' ? 'bg-tawny-port/10 text-tawny-port' :
-                    issue.type === 'task' ? 'bg-peru-tan/10 text-peru-tan' :
-                    'bg-erp-black/10 text-erp-black'
+                    issue.type === 'bug' ? 'bg-tawny-port/10 text-tawny-port dark:bg-tawny-port/20 dark:text-red-400' :
+                    issue.type === 'task' ? 'bg-peru-tan/10 text-peru-tan dark:bg-peru-tan/20 dark:text-amber-400' :
+                    'bg-erp-black/10 text-erp-black dark:bg-slate-700 dark:text-slate-300'
                   )}>
                     {issue.type}
                   </span>
                 </td>
                 <td className="px-6 py-4">
                   <div className="flex items-center gap-2">
-                    {issue.status === 'todo' && <CircleDashed size={16} className="text-slate-500" />}
-                    {issue.status === 'in_progress' && <Clock size={16} className="text-peru-tan" />}
-                    {issue.status === 'blocked' && <AlertCircle size={16} className="text-tawny-port" />}
+                    {issue.status === 'todo' && <CircleDashed size={16} className="text-slate-500 dark:text-slate-400" />}
+                    {issue.status === 'in_progress' && <Clock size={16} className="text-peru-tan dark:text-amber-500" />}
+                    {issue.status === 'blocked' && <AlertCircle size={16} className="text-tawny-port dark:text-red-500" />}
                     {issue.status === 'done' && <CheckCircle2 size={16} className="text-emerald-500" />}
-                    <span className="text-sm font-medium text-slate-700 capitalize">
+                    <span className="text-sm font-medium text-slate-700 dark:text-slate-300 capitalize">
                       {issue.status.replace('_', ' ')}
                     </span>
                   </div>
@@ -167,10 +167,10 @@ export const IssueList: React.FC<IssueListProps> = ({ issues, onEditIssue, onBul
                 <td className="px-6 py-4">
                   <span className={clsx(
                     "text-xs font-medium px-2 py-1 rounded-md",
-                    issue.priority === 'critical' ? 'bg-red-100 text-red-700' :
-                    issue.priority === 'high' ? 'bg-orange-100 text-orange-700' :
-                    issue.priority === 'medium' ? 'bg-yellow-100 text-yellow-700' :
-                    'bg-slate-100 text-slate-700'
+                    issue.priority === 'critical' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' :
+                    issue.priority === 'high' ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400' :
+                    issue.priority === 'medium' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' :
+                    'bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300'
                   )}>
                     {issue.priority}
                   </span>
@@ -179,23 +179,23 @@ export const IssueList: React.FC<IssueListProps> = ({ issues, onEditIssue, onBul
                   {issue.assigneeName ? (
                     <div className="flex items-center gap-2">
                       <Avatar name={issue.assigneeName} src={issue.assigneePhoto} size="sm" />
-                      <span className="text-sm text-slate-700">{issue.assigneeName}</span>
+                      <span className="text-sm text-slate-700 dark:text-slate-300">{issue.assigneeName}</span>
                     </div>
                   ) : (
-                    <span className="text-sm text-slate-400 italic">Unassigned</span>
+                    <span className="text-sm text-slate-400 dark:text-slate-500 italic">Unassigned</span>
                   )}
                 </td>
                 <td className="px-6 py-4">
                   {issue.reporterName ? (
                     <div className="flex items-center gap-2">
                       <Avatar name={issue.reporterName} src={issue.reporterPhoto} size="sm" />
-                      <span className="text-sm text-slate-700">{issue.reporterName}</span>
+                      <span className="text-sm text-slate-700 dark:text-slate-300">{issue.reporterName}</span>
                     </div>
                   ) : (
-                    <span className="text-sm text-slate-700">N/A</span>
+                    <span className="text-sm text-slate-700 dark:text-slate-300">N/A</span>
                   )}
                 </td>
-                <td className="px-6 py-4 text-sm text-slate-500">
+                <td className="px-6 py-4 text-sm text-slate-500 dark:text-slate-400">
                   {format(new Date(issue.created_at), 'MMM d, yyyy')}
                 </td>
               </tr>

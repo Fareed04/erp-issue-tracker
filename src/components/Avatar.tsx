@@ -28,7 +28,7 @@ export const Avatar: React.FC<AvatarProps> = ({ name, src, size = 'sm', classNam
   return (
     <div className={clsx(
       "relative inline-flex items-center justify-center rounded-full overflow-hidden shrink-0",
-      !src && "bg-indigo-100 text-indigo-700 font-bold",
+      !src && "bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 font-bold",
       sizeClasses[size],
       className
     )}>

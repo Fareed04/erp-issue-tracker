@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   --color-tawny-port: #74253A;
   --color-peru-tan: #7B5203;
@@ -7,7 +9,19 @@
 }
 
 @layer base {
+  :root {
+    --color-bg: #ffffff;
+    --color-border: #e2e8f0;
+    --color-text: #0f172a;
+  }
+  
+  .dark {
+    --color-bg: #1e293b;
+    --color-border: #334155;
+    --color-text: #f1f5f9;
+  }
+
   body {
-    @apply bg-slate-50 text-erp-black;
+    @apply bg-slate-50 text-erp-black dark:bg-slate-900 dark:text-slate-100;
   }
 }
