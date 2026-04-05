@@ -132,7 +132,7 @@ export default function App() {
     if (!user) return;
     try {
       if (editingIssue) {
-        await api.updateIssue(editingIssue.id, payload);
+        await api.updateIssue(editingIssue.id, payload, user);
         addNotification(`Issue updated.`, 'success');
       } else {
         const fullPayload = {
@@ -141,7 +141,7 @@ export default function App() {
           reporterName: user.displayName || 'Anonymous',
           reporterPhoto: user.photoURL,
         };
-        await api.createIssue(fullPayload as any);
+        await api.createIssue(fullPayload as any, user);
         addNotification(`New issue created.`, 'success');
       }
       setIsModalOpen(false);
@@ -165,8 +165,9 @@ export default function App() {
   };
 
   const handleUpdateStatus = async (id: string, status: IssueStatus) => {
+    if (!user) return;
     try {
-      await api.updateIssue(id, { status });
+      await api.updateIssue(id, { status }, user);
       addNotification(`Status updated to ${status.replace('_', ' ')}.`, 'info');
     } catch (error) {
       console.error('Failed to update status', error);
@@ -175,8 +176,9 @@ export default function App() {
   };
 
   const handleBulkUpdate = async (payload: BulkUpdatePayload) => {
+    if (!user) return;
     try {
-      await api.bulkUpdateIssues(payload);
+      await api.bulkUpdateIssues(payload, user);
       addNotification(`Successfully updated ${payload.ids.length} issues.`, 'success');
     } catch (error) {
       console.error('Bulk update failed', error);

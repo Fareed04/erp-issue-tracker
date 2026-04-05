@@ -27,6 +27,17 @@ export interface UserProfile {
   photoURL: string | null;
 }
 
+export interface ActivityLog {
+  id: string;
+  issueId: string;
+  userId: string;
+  userName: string;
+  userPhoto: string | null;
+  action: string;
+  details: string;
+  timestamp: string;
+}
+
 export type CreateIssuePayload = Omit<Issue, 'id' | 'created_at' | 'updated_at'>;
 
 export interface BulkUpdatePayload {
