@@ -14,7 +14,7 @@ import * as api from './services/api';
 import { Plus, Menu, Download } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { FilterBar } from './components/FilterBar';
-import { NotificationCenter, Notification } from './components/NotificationCenter';
+import { NotificationCenter } from './components/NotificationCenter';
 import { ThemeToggle } from './components/ThemeToggle';
 
 import { auth } from './firebase';
@@ -37,11 +37,11 @@ export default function App() {
   const [currentView, setCurrentView] = useState<'dashboard' | 'board' | 'list'>('dashboard');
   const [issues, setIssues] = useState<Issue[]>([]);
   const [filters, setFilters] = useState<FilterOptions>(initialFilters);
-  const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [editingIssue, setEditingIssue] = useState<Issue | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [toasts, setToasts] = useState<{id: string, message: string, type: 'success'|'error'|'info'|'warning'}[]>([]);
 
   useEffect(() => {
     if (user) {
@@ -56,32 +56,46 @@ export default function App() {
     }
   }, [user]);
 
+  // Deadline checker
   useEffect(() => {
-    if (issues.length > 0) {
-      const pendingIssues = issues.filter(i => i.status === 'todo' || i.status === 'blocked');
-      if (pendingIssues.length > 0) {
-        const newNotif: Notification = {
-          id: Date.now().toString(),
-          message: `You have ${pendingIssues.length} pending issues that need attention.`,
-          type: 'warning',
-          timestamp: Date.now(),
-        };
-        setNotifications(prev => {
-          if (prev.length > 0 && prev[0].message === newNotif.message) return prev;
-          return [newNotif, ...prev].slice(0, 10);
-        });
-      }
-    }
-  }, [issues]);
+    if (!user) return;
+    
+    const checkDeadlines = async () => {
+      const now = new Date();
+      const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+      
+      const profile = await api.getUserProfile(user.uid);
+      if (profile?.preferences?.notifyOnDeadline === false) return;
 
-  const addNotification = (message: string, type: Notification['type']) => {
-    const newNotif: Notification = {
-      id: Date.now().toString(),
-      message,
-      type,
-      timestamp: Date.now(),
+      issues.forEach(async (issue) => {
+        if (issue.assigneeUid === user.uid && issue.dueDate && !issue.deadlineNotified && issue.status !== 'done') {
+          const dueDate = new Date(issue.dueDate);
+          if (dueDate <= tomorrow && dueDate >= now) {
+            await api.createNotification(user.uid, {
+              title: 'Approaching Deadline',
+              message: `Task "${issue.title}" is due soon (${dueDate.toLocaleDateString()})`,
+              type: 'warning',
+              linkToIssueId: issue.id,
+            });
+            // Mark as notified
+            await api.updateIssue(issue.id, { deadlineNotified: true }, null);
+          }
+        }
+      });
     };
-    setNotifications(prev => [newNotif, ...prev].slice(0, 10));
+
+    checkDeadlines();
+    // Check every hour
+    const interval = setInterval(checkDeadlines, 60 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, [issues, user]);
+
+  const addNotification = (message: string, type: 'success'|'error'|'info'|'warning') => {
+    const id = Date.now().toString();
+    setToasts(prev => [...prev, { id, message, type }]);
+    setTimeout(() => {
+      setToasts(prev => prev.filter(n => n.id !== id));
+    }, 5000);
   };
 
   const filteredIssues = issues.filter(issue => {
@@ -196,6 +210,13 @@ export default function App() {
     setIsModalOpen(true);
   };
 
+  const handleIssueClickFromNotification = (issueId: string) => {
+    const issue = issues.find(i => i.id === issueId);
+    if (issue) {
+      openEditIssueModal(issue);
+    }
+  };
+
   if (authLoading) {
     return (
       <div className="h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900">
@@ -248,8 +269,8 @@ export default function App() {
             <div className="h-8 w-px bg-slate-200 dark:bg-slate-700 mx-1 hidden sm:block"></div>
             <ThemeToggle />
             <NotificationCenter 
-              notifications={notifications} 
-              onDismiss={(id) => setNotifications(prev => prev.filter(n => n.id !== id))} 
+              userId={user?.uid} 
+              onIssueClick={handleIssueClickFromNotification}
             />
             <div className="h-8 w-px bg-slate-200 dark:bg-slate-700 mx-1 hidden sm:block"></div>
             <button

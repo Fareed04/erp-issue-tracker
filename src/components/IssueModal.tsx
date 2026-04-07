@@ -4,6 +4,7 @@ import { X, Save, Trash2, User, Clock } from 'lucide-react';
 import * as api from '../services/api';
 import { Avatar } from './Avatar';
 import { formatDistanceToNow } from 'date-fns';
+import { auth } from '../firebase';
 
 interface IssueModalProps {
   isOpen: boolean;
@@ -17,7 +18,9 @@ export const IssueModal: React.FC<IssueModalProps> = ({ isOpen, onClose, onSave,
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [activities, setActivities] = useState<ActivityLog[]>([]);
-  const [activeTab, setActiveTab] = useState<'details' | 'activity'>('details');
+  const [comments, setComments] = useState<any[]>([]);
+  const [newComment, setNewComment] = useState('');
+  const [activeTab, setActiveTab] = useState<'details' | 'activity' | 'comments'>('details');
   const [formData, setFormData] = useState<any>({
     title: '',
     description: '',
@@ -28,6 +31,7 @@ export const IssueModal: React.FC<IssueModalProps> = ({ isOpen, onClose, onSave,
     assigneeName: '',
     assigneePhoto: '',
     delay_cause: '',
+    dueDate: '',
   });
 
   useEffect(() => {
@@ -44,12 +48,19 @@ export const IssueModal: React.FC<IssueModalProps> = ({ isOpen, onClose, onSave,
 
   useEffect(() => {
     if (isOpen && issue) {
-      const unsubscribe = api.subscribeToIssueActivities(issue.id, (data) => {
+      const unsubscribeActivities = api.subscribeToIssueActivities(issue.id, (data) => {
         setActivities(data);
       });
-      return () => unsubscribe();
+      const unsubscribeComments = api.subscribeToComments(issue.id, (data) => {
+        setComments(data);
+      });
+      return () => {
+        unsubscribeActivities();
+        unsubscribeComments();
+      };
     } else {
       setActivities([]);
+      setComments([]);
     }
   }, [isOpen, issue]);
 
@@ -65,6 +76,7 @@ export const IssueModal: React.FC<IssueModalProps> = ({ isOpen, onClose, onSave,
         assigneeName: issue.assigneeName || '',
         assigneePhoto: issue.assigneePhoto || '',
         delay_cause: issue.delay_cause || '',
+        dueDate: issue.dueDate || '',
       });
     } else {
       setFormData({
@@ -77,6 +89,7 @@ export const IssueModal: React.FC<IssueModalProps> = ({ isOpen, onClose, onSave,
         assigneeName: '',
         assigneePhoto: '',
         delay_cause: '',
+        dueDate: '',
       });
       setActiveTab('details');
     }
@@ -168,6 +181,16 @@ export const IssueModal: React.FC<IssueModalProps> = ({ isOpen, onClose, onSave,
               Details
             </button>
             <button
+              onClick={() => setActiveTab('comments')}
+              className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 ${
+                activeTab === 'comments'
+                  ? 'border-tawny-port text-tawny-port dark:text-white'
+                  : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300'
+              }`}
+            >
+              Comments ({comments.length})
+            </button>
+            <button
               onClick={() => setActiveTab('activity')}
               className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 ${
                 activeTab === 'activity'
@@ -250,18 +273,30 @@ export const IssueModal: React.FC<IssueModalProps> = ({ isOpen, onClose, onSave,
                 </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Assignee</label>
-                <select
-                  value={formData.assigneeUid}
-                  onChange={e => handleAssigneeChange(e.target.value)}
-                  className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-tawny-port focus:border-tawny-port outline-none transition-all bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100"
-                >
-                  <option value="">Unassigned</option>
-                  {users.map(u => (
-                    <option key={u.uid} value={u.uid}>{u.displayName}</option>
-                  ))}
-                </select>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Assignee</label>
+                  <select
+                    value={formData.assigneeUid}
+                    onChange={e => handleAssigneeChange(e.target.value)}
+                    className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-tawny-port focus:border-tawny-port outline-none transition-all bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100"
+                  >
+                    <option value="">Unassigned</option>
+                    {users.map(u => (
+                      <option key={u.uid} value={u.uid}>{u.displayName}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Due Date</label>
+                  <input
+                    type="date"
+                    value={formData.dueDate || ''}
+                    onChange={e => setFormData({ ...formData, dueDate: e.target.value })}
+                    className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-tawny-port focus:border-tawny-port outline-none transition-all bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100"
+                  />
+                </div>
               </div>
 
               {formData.status === 'blocked' && (
@@ -278,7 +313,7 @@ export const IssueModal: React.FC<IssueModalProps> = ({ isOpen, onClose, onSave,
                 </div>
               )}
             </form>
-          ) : (
+          ) : activeTab === 'activity' ? (
             <div className="space-y-6">
               {activities.length === 0 ? (
                 <div className="text-center py-8 text-slate-500 dark:text-slate-400">
@@ -314,6 +349,71 @@ export const IssueModal: React.FC<IssueModalProps> = ({ isOpen, onClose, onSave,
                   ))}
                 </div>
               )}
+            </div>
+          ) : (
+            <div className="space-y-6 flex flex-col h-full">
+              <div className="flex-1 overflow-y-auto space-y-4 pr-2">
+                {comments.length === 0 ? (
+                  <div className="text-center py-8 text-slate-500 dark:text-slate-400">
+                    <p>No comments yet. Be the first to comment!</p>
+                  </div>
+                ) : (
+                  comments.map((comment) => (
+                    <div key={comment.id} className="flex gap-3">
+                      <Avatar 
+                        src={comment.userPhoto || undefined} 
+                        name={comment.userName} 
+                        size="sm" 
+                        className="shrink-0 mt-1"
+                      />
+                      <div className="flex-1">
+                        <div className="bg-slate-50 dark:bg-slate-900/50 rounded-lg rounded-tl-none p-3 border border-slate-100 dark:border-slate-700/50">
+                          <div className="flex justify-between items-start mb-1">
+                            <span className="font-medium text-slate-900 dark:text-slate-100 text-sm">
+                              {comment.userName}
+                            </span>
+                            <span className="text-xs text-slate-500 dark:text-slate-400" title={new Date(comment.timestamp).toLocaleString()}>
+                              {formatDistanceToNow(new Date(comment.timestamp), { addSuffix: true })}
+                            </span>
+                          </div>
+                          <p className="text-sm text-slate-700 dark:text-slate-300 whitespace-pre-wrap">
+                            {comment.text}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+              
+              <div className="pt-4 border-t border-slate-200 dark:border-slate-700 mt-auto shrink-0">
+                <div className="flex gap-3">
+                  <textarea
+                    value={newComment}
+                    onChange={(e) => setNewComment(e.target.value)}
+                    placeholder="Add a comment..."
+                    className="flex-1 px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-tawny-port focus:border-tawny-port outline-none resize-none bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 min-h-[80px]"
+                  />
+                </div>
+                <div className="flex justify-end mt-2">
+                  <button
+                    type="button"
+                    disabled={!newComment.trim()}
+                    onClick={async () => {
+                      if (issue && newComment.trim()) {
+                        const currentUser = auth.currentUser;
+                        if (currentUser) {
+                          await api.addComment(issue.id, currentUser, newComment.trim());
+                          setNewComment('');
+                        }
+                      }
+                    }}
+                    className="px-4 py-2 bg-tawny-port hover:bg-tawny-port/90 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg transition-colors font-medium text-sm"
+                  >
+                    Post Comment
+                  </button>
+                </div>
+              </div>
             </div>
           )}
         </div>

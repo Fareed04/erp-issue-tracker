@@ -16,8 +16,17 @@ export interface Issue {
   reporterName: string;
   reporterPhoto: string | null;
   delay_cause: string | null;
+  dueDate?: string | null;
+  deadlineNotified?: boolean;
   created_at: string;
   updated_at: string;
+}
+
+export interface NotificationPreferences {
+  notifyOnAssign: boolean;
+  notifyOnStatusChange: boolean;
+  notifyOnComment: boolean;
+  notifyOnDeadline: boolean;
 }
 
 export interface UserProfile {
@@ -25,6 +34,7 @@ export interface UserProfile {
   displayName: string;
   email: string;
   photoURL: string | null;
+  preferences?: NotificationPreferences;
 }
 
 export interface ActivityLog {
@@ -38,7 +48,28 @@ export interface ActivityLog {
   timestamp: string;
 }
 
-export type CreateIssuePayload = Omit<Issue, 'id' | 'created_at' | 'updated_at'>;
+export interface Comment {
+  id: string;
+  issueId: string;
+  userId: string;
+  userName: string;
+  userPhoto: string | null;
+  text: string;
+  timestamp: string;
+}
+
+export interface AppNotification {
+  id: string;
+  userId: string;
+  title: string;
+  message: string;
+  type: 'info' | 'success' | 'warning' | 'error';
+  read: boolean;
+  linkToIssueId?: string;
+  timestamp: string;
+}
+
+export type CreateIssuePayload = Omit<Issue, 'id' | 'created_at' | 'updated_at' | 'deadlineNotified'>;
 
 export interface BulkUpdatePayload {
   ids: string[];
