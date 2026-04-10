@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { signInWithPopup, signOut } from 'firebase/auth';
+import { signInWithPopup, signOut, signInWithCredential, GoogleAuthProvider } from 'firebase/auth';
 import { auth, googleProvider } from '../firebase';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { LogIn, LogOut, User, Settings, X, Save, Bell } from 'lucide-react';
 import { updateUserProfile, getUserProfile } from '../services/api';
 import { NotificationPreferences } from '../types';
+
+const GOOGLE_CLIENT_ID = "1085029246456-vr523qhq1kb3paofppt0vsbsu0etdcq4.apps.googleusercontent.com";
 
 export const Auth: React.FC = () => {
   const [user, loading] = useAuthState(auth);
@@ -17,6 +19,64 @@ export const Auth: React.FC = () => {
     notifyOnDeadline: true,
   });
   const [loginError, setLoginError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!loading && !user) {
+      const initializeOneTap = () => {
+        const win = window as any;
+        if (win.google?.accounts?.id) {
+          win.google.accounts.id.initialize({
+            client_id: GOOGLE_CLIENT_ID,
+            use_fedcm_for_prompt: false,
+            callback: async (response: any) => {
+              try {
+                const credential = GoogleAuthProvider.credential(response.credential);
+                const result = await signInWithCredential(auth, credential);
+                if (result.user) {
+                  const existingProfile = await getUserProfile(result.user.uid);
+                  if (!existingProfile) {
+                    await updateUserProfile({
+                      uid: result.user.uid,
+                      displayName: result.user.displayName || 'Anonymous',
+                      email: result.user.email || '',
+                      photoURL: result.user.photoURL,
+                      preferences: {
+                        notifyOnAssign: true,
+                        notifyOnStatusChange: true,
+                        notifyOnComment: true,
+                        notifyOnDeadline: true,
+                      }
+                    });
+                  }
+                }
+              } catch (error) {
+                console.error("One Tap sign-in failed", error);
+                setLoginError('One Tap login failed. Please try the button.');
+              }
+            },
+            auto_select: true,
+            cancel_on_tap_outside: false,
+          });
+          win.google.accounts.id.prompt((notification: any) => {
+            if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+              // User closed it or it wasn't displayed, they can still use the manual button
+            }
+          });
+        }
+      };
+
+      if (!(window as any).google) {
+        const script = document.createElement('script');
+        script.src = 'https://accounts.google.com/gsi/client';
+        script.async = true;
+        script.defer = true;
+        script.onload = initializeOneTap;
+        document.body.appendChild(script);
+      } else {
+        initializeOneTap();
+      }
+    }
+  }, [user, loading]);
 
   const handleLogin = async () => {
     setLoginError(null);
