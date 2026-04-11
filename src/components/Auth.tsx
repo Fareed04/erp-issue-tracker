@@ -152,21 +152,21 @@ export const Auth: React.FC = () => {
   if (user) {
     return (
       <>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 shrink-0">
           <div className="flex flex-col items-end hidden sm:flex">
             <span className="text-sm font-bold text-slate-900 dark:text-white">{user.displayName}</span>
             <span className="text-xs text-slate-500 dark:text-slate-400">{user.email}</span>
           </div>
-          <div className="relative group">
+          <div className="relative group shrink-0">
             {user.photoURL ? (
               <img 
                 src={user.photoURL} 
                 alt={user.displayName || ''} 
-                className="w-10 h-10 rounded-full border-2 border-tawny-port cursor-pointer"
+                className="w-10 h-10 rounded-full border-2 border-tawny-port cursor-pointer shrink-0 object-cover"
                 referrerPolicy="no-referrer"
               />
             ) : (
-              <div className="w-10 h-10 rounded-full bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 flex items-center justify-center font-bold border-2 border-tawny-port cursor-pointer">
+              <div className="w-10 h-10 rounded-full bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 flex items-center justify-center font-bold border-2 border-tawny-port cursor-pointer shrink-0">
                 {user.displayName?.charAt(0).toUpperCase() || 'U'}
               </div>
             )}
