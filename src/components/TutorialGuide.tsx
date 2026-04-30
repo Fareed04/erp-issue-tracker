@@ -8,6 +8,7 @@ interface TutorialStep {
   description: string;
   targetId?: string;
   position?: 'top' | 'bottom' | 'left' | 'right' | 'center';
+  requireAction?: boolean;
 }
 
 const steps: TutorialStep[] = [
@@ -19,36 +20,40 @@ const steps: TutorialStep[] = [
   },
   {
     id: 1,
-    title: "Start an Entry",
-    description: "Click the '+ New Issue' button to report a task, bug, or general system issue.",
+    title: "Step 1: Open the Form",
+    description: "First, let's create your first issue. Click the '+ New Issue' button in the top right to start.",
     targetId: 'new-issue-btn',
-    position: 'bottom'
+    position: 'bottom',
+    requireAction: true
   },
   {
     id: 2,
-    title: "Categorize as Bug",
-    description: "When creating an issue, select 'Bug' from the Type dropdown to help prioritize technical fixes.",
+    title: "Step 2: Create a Bug",
+    description: "Fill in a title and set the Type to 'Bug'. Then click 'Create Issue' to save it.",
     targetId: 'issue-type-select',
-    position: 'right'
+    position: 'right',
+    requireAction: true
   },
   {
     id: 3,
-    title: "Track Progress",
-    description: "Ready to move on? You can change an issue's status here to 'Done' once it's resolved.",
+    title: "Step 3: Resolve it",
+    description: "Now open the issue you just created (by clicking it in the list or board) and change its status to 'Done'.",
     targetId: 'issue-status-select',
-    position: 'right'
+    position: 'right',
+    requireAction: true
   },
   {
     id: 4,
-    title: "Clean Up",
-    description: "You've mastered the lifecycle! You can delete issues entirely when they are no longer needed.",
+    title: "Step 4: Clean Up",
+    description: "Great! Finally, let's keep things tidy. Open the issue one last time and click 'Delete' in the bottom left.",
     targetId: 'delete-issue-btn',
-    position: 'left'
+    position: 'left',
+    requireAction: true
   },
   {
     id: 5,
-    title: "Mastered!",
-    description: "You're now ready to use the ERP Tracker like a pro. Start by helping your team stay organized!",
+    title: "You're all set!",
+    description: "You've successfully created, updated, and deleted an issue. You're ready to use the system for real work!",
     position: 'center'
   }
 ];
@@ -167,10 +172,15 @@ export const TutorialGuide: React.FC<TutorialGuideProps> = ({ currentStep, onNex
             </div>
             <button
               onClick={onNext}
-              className="flex items-center gap-2 bg-tawny-port hover:bg-tawny-port/90 text-white px-4 py-2 rounded-xl text-sm font-bold transition-all shadow-lg border border-tawny-port/20"
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all shadow-lg border ${
+                step.requireAction 
+                  ? 'bg-slate-100 dark:bg-slate-700 text-slate-400 border-slate-200 dark:border-slate-600 cursor-not-allowed'
+                  : 'bg-tawny-port hover:bg-tawny-port/90 text-white border-tawny-port/20'
+              }`}
+              disabled={step.requireAction}
             >
-              {currentStep === 5 ? 'Start Exploring' : 'Next'}
-              {currentStep !== 5 && <ChevronRight size={16} />}
+              {step.requireAction ? 'Perform Action' : (currentStep === 5 ? 'Start Exploring' : 'Next')}
+              {!step.requireAction && currentStep !== 5 && <ChevronRight size={16} />}
             </button>
           </div>
         </motion.div>

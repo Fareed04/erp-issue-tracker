@@ -181,6 +181,11 @@ export default function App() {
       if (editingIssue) {
         await api.updateIssue(editingIssue.id, payload, user);
         addNotification(`Issue updated.`, 'success');
+        
+        // Step 3 progression: check if it's now done
+        if (userProfile && !userProfile.tutorialCompleted && userProfile.tutorialStep === 3 && payload.status === 'done') {
+          handleTutorialNext();
+        }
       } else {
         const fullPayload = {
           ...payload,
@@ -190,6 +195,11 @@ export default function App() {
         };
         await api.createIssue(fullPayload as any, user);
         addNotification(`New issue created.`, 'success');
+        
+        // Step 2 progression
+        if (userProfile && !userProfile.tutorialCompleted && userProfile.tutorialStep === 2) {
+          handleTutorialNext();
+        }
       }
       setIsModalOpen(false);
       setEditingIssue(null);
@@ -205,6 +215,11 @@ export default function App() {
       setIsModalOpen(false);
       setEditingIssue(null);
       addNotification('Issue deleted successfully.', 'info');
+      
+      // Step 4 progression
+      if (userProfile && !userProfile.tutorialCompleted && userProfile.tutorialStep === 4) {
+        handleTutorialNext();
+      }
     } catch (error) {
       console.error('Failed to delete issue', error);
       addNotification('Failed to delete issue.', 'error');
@@ -216,6 +231,11 @@ export default function App() {
     try {
       await api.updateIssue(id, { status }, user);
       addNotification(`Status updated to ${status.replace('_', ' ')}.`, 'info');
+      
+      // Step 3 progression via board drag/drop or context update
+      if (userProfile && !userProfile.tutorialCompleted && userProfile.tutorialStep === 3 && status === 'done') {
+        handleTutorialNext();
+      }
     } catch (error) {
       console.error('Failed to update status', error);
       addNotification('Failed to update status.', 'error');
@@ -236,6 +256,9 @@ export default function App() {
   const openNewIssueModal = () => {
     setEditingIssue(null);
     setIsModalOpen(true);
+    if (userProfile && !userProfile.tutorialCompleted && userProfile.tutorialStep === 1) {
+      handleTutorialNext();
+    }
   };
 
   const openEditIssueModal = (issue: Issue) => {
