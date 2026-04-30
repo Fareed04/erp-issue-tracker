@@ -172,15 +172,10 @@ export const TutorialGuide: React.FC<TutorialGuideProps> = ({ currentStep, onNex
             </div>
             <button
               onClick={onNext}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all shadow-lg border ${
-                step.requireAction 
-                  ? 'bg-slate-100 dark:bg-slate-700 text-slate-400 border-slate-200 dark:border-slate-600 cursor-not-allowed'
-                  : 'bg-tawny-port hover:bg-tawny-port/90 text-white border-tawny-port/20'
-              }`}
-              disabled={step.requireAction}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all shadow-lg border bg-tawny-port hover:bg-tawny-port/90 text-white border-tawny-port/20"
             >
-              {step.requireAction ? 'Perform Action' : (currentStep === 5 ? 'Start Exploring' : 'Next')}
-              {!step.requireAction && currentStep !== 5 && <ChevronRight size={16} />}
+              {currentStep === 5 ? 'Start Exploring' : 'Next'}
+              {currentStep !== 5 && <ChevronRight size={16} />}
             </button>
           </div>
         </motion.div>

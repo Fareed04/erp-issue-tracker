@@ -21,63 +21,7 @@ export const Auth: React.FC = () => {
   const [loginError, setLoginError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!loading && !user) {
-      const initializeOneTap = () => {
-        const win = window as any;
-        if (win.google?.accounts?.id) {
-          win.google.accounts.id.initialize({
-            client_id: GOOGLE_CLIENT_ID,
-            use_fedcm_for_prompt: false,
-            callback: async (response: any) => {
-              try {
-                const credential = GoogleAuthProvider.credential(response.credential);
-                const result = await signInWithCredential(auth, credential);
-                if (result.user) {
-                  const existingProfile = await getUserProfile(result.user.uid);
-                  if (!existingProfile) {
-                    await updateUserProfile({
-                      uid: result.user.uid,
-                      displayName: result.user.displayName || 'Anonymous',
-                      email: result.user.email || '',
-                      photoURL: result.user.photoURL,
-                      tutorialCompleted: false,
-                      tutorialStep: 0,
-                      preferences: {
-                        notifyOnAssign: true,
-                        notifyOnStatusChange: true,
-                        notifyOnComment: true,
-                        notifyOnDeadline: true,
-                      }
-                    });
-                  }
-                }
-              } catch (error) {
-                console.error("One Tap sign-in failed", error);
-                setLoginError('One Tap login failed. Please try the button.');
-              }
-            },
-            auto_select: true,
-            cancel_on_tap_outside: false,
-          });
-          win.google.accounts.id.prompt((notification: any) => {
-            if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-              // User closed it or it wasn't displayed, they can still use the manual button
-            }
-          });
-        }
-      };
-
-      if (!(window as any).google) {
-        const script = document.createElement('script');
-        script.src = 'https://accounts.google.com/gsi/client';
-        script.async = true;
-        script.defer = true;
-        script.onload = initializeOneTap;
-        document.body.appendChild(script);
-      } else {
-        initializeOneTap();
-      }
-    }
+    // One Tap removed to prevent GSI_LOGGER FedCM errors in iframe
   }, [user, loading]);
 
   const handleLogin = async () => {
@@ -290,9 +234,9 @@ export const Auth: React.FC = () => {
                         if (user) {
                           await updateUserProfile({
                             uid: user.uid,
-                            displayName: user.displayName || '',
+                            displayName: profileData.displayName || user.displayName || 'Anonymous',
                             email: user.email || '',
-                            photoURL: user.photoURL,
+                            photoURL: profileData.photoURL || user.photoURL,
                             tutorialCompleted: false,
                             tutorialStep: 0,
                             preferences: preferences,
