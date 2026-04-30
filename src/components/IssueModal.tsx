@@ -234,6 +234,7 @@ export const IssueModal: React.FC<IssueModalProps> = ({ isOpen, onClose, onSave,
                 <div>
                   <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Type</label>
                   <select
+                    id="issue-type-select"
                     value={formData.type}
                     onChange={e => setFormData({ ...formData, type: e.target.value as IssueType })}
                     className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-tawny-port focus:border-tawny-port outline-none transition-all bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100"
@@ -247,6 +248,7 @@ export const IssueModal: React.FC<IssueModalProps> = ({ isOpen, onClose, onSave,
                 <div>
                   <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Status</label>
                   <select
+                    id="issue-status-select"
                     value={formData.status}
                     onChange={e => setFormData({ ...formData, status: e.target.value as IssueStatus })}
                     className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-tawny-port focus:border-tawny-port outline-none transition-all bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100"
@@ -421,6 +423,7 @@ export const IssueModal: React.FC<IssueModalProps> = ({ isOpen, onClose, onSave,
         <div className="px-6 py-4 border-t border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 flex justify-between items-center">
           {issue && onDelete && activeTab === 'details' ? (
             <button
+              id="delete-issue-btn"
               type="button"
               onClick={() => setShowDeleteConfirm(true)}
               className="flex items-center gap-2 px-4 py-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors font-medium"

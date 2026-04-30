@@ -21,6 +21,9 @@ import { auth } from './firebase';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { Auth } from './components/Auth';
 
+import { TutorialGuide } from './components/TutorialGuide';
+import { UserProfile } from './types';
+
 const initialFilters: FilterOptions = {
   search: '',
   assignee: '',
@@ -34,6 +37,7 @@ const initialFilters: FilterOptions = {
 
 export default function App() {
   const [user, authLoading] = useAuthState(auth);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [currentView, setCurrentView] = useState<'dashboard' | 'board' | 'list'>('dashboard');
   const [issues, setIssues] = useState<Issue[]>([]);
   const [filters, setFilters] = useState<FilterOptions>(initialFilters);
@@ -45,6 +49,9 @@ export default function App() {
 
   useEffect(() => {
     if (user) {
+      api.getUserProfile(user.uid).then(profile => {
+        setUserProfile(profile);
+      });
       const unsubscribe = api.subscribeToIssues((data) => {
         setIssues(data);
         setIsLoading(false);
@@ -53,8 +60,34 @@ export default function App() {
     } else {
       setIssues([]);
       setIsLoading(false);
+      setUserProfile(null);
     }
   }, [user]);
+
+  const handleTutorialNext = async () => {
+    if (!userProfile) return;
+    const nextStep = (userProfile.tutorialStep || 0) + 1;
+    const isFinished = nextStep >= 6;
+    
+    const updatedProfile = {
+      ...userProfile,
+      tutorialStep: nextStep,
+      tutorialCompleted: isFinished
+    };
+    
+    setUserProfile(updatedProfile);
+    await api.updateUserProfile(updatedProfile);
+  };
+
+  const handleTutorialSkip = async () => {
+    if (!userProfile) return;
+    const updatedProfile = {
+      ...userProfile,
+      tutorialCompleted: true
+    };
+    setUserProfile(updatedProfile);
+    await api.updateUserProfile(updatedProfile);
+  };
 
   // Deadline checker
   useEffect(() => {
@@ -282,6 +315,7 @@ export default function App() {
               <span className="hidden sm:inline">Export</span>
             </button>
             <button
+              id="new-issue-btn"
               onClick={openNewIssueModal}
               className="flex items-center justify-center gap-2 bg-tawny-port hover:bg-tawny-port/90 text-white w-10 h-10 sm:w-auto sm:px-3 lg:px-4 sm:py-2 rounded-lg text-sm lg:text-base font-medium transition-colors shadow-sm shrink-0"
               title="New Issue"
@@ -339,6 +373,14 @@ export default function App() {
         onDelete={handleDeleteIssue}
         issue={editingIssue}
       />
+
+      {userProfile && !userProfile.tutorialCompleted && (
+        <TutorialGuide 
+          currentStep={userProfile.tutorialStep || 0}
+          onNext={handleTutorialNext}
+          onSkip={handleTutorialSkip}
+        />
+      )}
     </div>
   );
 }

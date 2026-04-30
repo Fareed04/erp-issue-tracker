@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { signInWithPopup, signOut, signInWithCredential, GoogleAuthProvider } from 'firebase/auth';
 import { auth, googleProvider } from '../firebase';
 import { useAuthState } from 'react-firebase-hooks/auth';
-import { LogIn, LogOut, User, Settings, X, Save, Bell } from 'lucide-react';
+import { LogIn, LogOut, User, Settings, X, Save, Bell, HelpCircle } from 'lucide-react';
 import { updateUserProfile, getUserProfile } from '../services/api';
 import { NotificationPreferences } from '../types';
 
@@ -40,6 +40,8 @@ export const Auth: React.FC = () => {
                       displayName: result.user.displayName || 'Anonymous',
                       email: result.user.email || '',
                       photoURL: result.user.photoURL,
+                      tutorialCompleted: false,
+                      tutorialStep: 0,
                       preferences: {
                         notifyOnAssign: true,
                         notifyOnStatusChange: true,
@@ -91,6 +93,8 @@ export const Auth: React.FC = () => {
             displayName: result.user.displayName || 'Anonymous',
             email: result.user.email || '',
             photoURL: result.user.photoURL,
+            tutorialCompleted: false,
+            tutorialStep: 0,
             preferences: {
               notifyOnAssign: true,
               notifyOnStatusChange: true,
@@ -274,6 +278,33 @@ export const Auth: React.FC = () => {
                       />
                       <span className="text-sm text-slate-700 dark:text-slate-300">When a deadline is approaching (24h)</span>
                     </label>
+                  </div>
+
+                  <div className="pt-4 border-t border-slate-200 dark:border-slate-700 space-y-4">
+                    <h3 className="text-sm font-bold text-slate-800 dark:text-white uppercase tracking-wider flex items-center gap-2">
+                       Walkthrough
+                    </h3>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        if (user) {
+                          await updateUserProfile({
+                            uid: user.uid,
+                            displayName: user.displayName || '',
+                            email: user.email || '',
+                            photoURL: user.photoURL,
+                            tutorialCompleted: false,
+                            tutorialStep: 0,
+                            preferences: preferences,
+                          });
+                          window.location.reload();
+                        }
+                      }}
+                      className="w-full flex items-center justify-center gap-2 px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors text-sm font-medium text-slate-700 dark:text-slate-300"
+                    >
+                      <HelpCircle size={16} />
+                      Restart Tutorial
+                    </button>
                   </div>
                 </form>
               </div>

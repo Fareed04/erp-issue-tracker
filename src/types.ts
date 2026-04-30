@@ -35,6 +35,8 @@ export interface UserProfile {
   email: string;
   photoURL: string | null;
   preferences?: NotificationPreferences;
+  tutorialCompleted?: boolean;
+  tutorialStep?: number;
 }
 
 export interface ActivityLog {
