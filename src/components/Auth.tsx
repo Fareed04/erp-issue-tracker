@@ -12,6 +12,7 @@ export const Auth: React.FC = () => {
   const [user, loading] = useAuthState(auth);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [profileData, setProfileData] = useState({ displayName: '', photoURL: '' });
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [preferences, setPreferences] = useState<NotificationPreferences>({
     notifyOnAssign: true,
     notifyOnStatusChange: true,
@@ -59,6 +60,7 @@ export const Auth: React.FC = () => {
   };
 
   const openProfileModal = async () => {
+    setIsDropdownOpen(false);
     if (user) {
       setProfileData({
         displayName: user.displayName || '',
@@ -93,7 +95,10 @@ export const Auth: React.FC = () => {
     }
   };
 
-  const handleLogout = () => signOut(auth);
+  const handleLogout = () => {
+    setIsDropdownOpen(false);
+    signOut(auth);
+  };
 
   if (loading) return <div className="animate-pulse bg-slate-200 dark:bg-slate-700 h-10 w-24 rounded-lg"></div>;
 
@@ -105,20 +110,32 @@ export const Auth: React.FC = () => {
             <span className="text-sm font-bold text-slate-900 dark:text-white">{user.displayName}</span>
             <span className="text-xs text-slate-500 dark:text-slate-400">{user.email}</span>
           </div>
-          <div className="relative group shrink-0">
-            {user.photoURL ? (
-              <img 
-                src={user.photoURL} 
-                alt={user.displayName || ''} 
-                className="w-10 h-10 rounded-full border-2 border-tawny-port cursor-pointer shrink-0 object-cover"
-                referrerPolicy="no-referrer"
-              />
-            ) : (
-              <div className="w-10 h-10 rounded-full bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 flex items-center justify-center font-bold border-2 border-tawny-port cursor-pointer shrink-0">
-                {user.displayName?.charAt(0).toUpperCase() || 'U'}
-              </div>
+          <div className="relative shrink-0">
+            {isDropdownOpen && (
+              <div 
+                className="fixed inset-0 z-40" 
+                onClick={() => setIsDropdownOpen(false)}
+              ></div>
             )}
-            <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-200 dark:border-slate-700 opacity-0 group-hover:opacity-100 transition-opacity invisible group-hover:visible z-50 overflow-hidden">
+            <div 
+              className="cursor-pointer group flex items-center justify-center shrink-0"
+              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+            >
+              {user.photoURL ? (
+                <img 
+                  src={user.photoURL} 
+                  alt={user.displayName || ''} 
+                  className="w-10 h-10 rounded-full border-2 border-tawny-port object-cover"
+                  referrerPolicy="no-referrer"
+                />
+              ) : (
+                <div className="w-10 h-10 rounded-full bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 flex items-center justify-center font-bold border-2 border-tawny-port">
+                  {user.displayName?.charAt(0).toUpperCase() || 'U'}
+                </div>
+              )}
+            </div>
+            
+            <div className={`absolute right-0 mt-2 w-48 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-200 dark:border-slate-700 z-50 overflow-hidden transition-all duration-200 origin-top-right ${isDropdownOpen ? 'opacity-100 scale-100 visible' : 'opacity-0 scale-95 invisible'}`}>
               <div className="p-4 border-b border-slate-100 dark:border-slate-700">
                 <p className="font-bold text-slate-900 dark:text-white truncate">{user.displayName}</p>
                 <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{user.email}</p>
