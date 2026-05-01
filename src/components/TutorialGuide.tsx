@@ -128,12 +128,12 @@ export const TutorialGuide: React.FC<TutorialGuideProps> = ({ currentStep, onNex
             scale: 1, 
             y: 0,
             ...(targetRect ? {
-              top: step.position === 'bottom' ? targetRect.bottom + 24 : 
+              top: Math.max(16, Math.min(window.innerHeight - 240 - 16, step.position === 'bottom' ? targetRect.bottom + 24 : 
                    step.position === 'top' ? targetRect.top - 240 : 
-                   targetRect.top - (100),
-              left: step.position === 'right' ? targetRect.right + 24 : 
+                   targetRect.top - (100))),
+              left: Math.max(16, Math.min(window.innerWidth - 320 - 16, step.position === 'right' ? targetRect.right + 24 : 
                     step.position === 'left' ? targetRect.left - 344 : 
-                    targetRect.left + (targetRect.width / 2) - 160
+                    targetRect.left + (targetRect.width / 2) - 160))
             } : {
               top: '50%',
               left: '50%',
