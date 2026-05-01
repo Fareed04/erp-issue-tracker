@@ -308,11 +308,11 @@ export default function App() {
       />
       
       <main className="flex-1 flex flex-col relative h-full overflow-hidden">
-        <header className="h-16 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between px-4 lg:px-8 shrink-0">
-          <div className="flex items-center gap-4">
+        <header className="h-16 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between px-2 sm:px-4 lg:px-8 shrink-0 gap-2">
+          <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1">
             <button 
               onClick={() => setIsSidebarOpen(true)}
-              className="lg:hidden p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg text-slate-600 dark:text-slate-300"
+              className="lg:hidden p-1.5 sm:p-2 flex-shrink-0 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg text-slate-600 dark:text-slate-300"
             >
               <Menu size={20} />
             </button>
@@ -320,7 +320,7 @@ export default function App() {
               {currentView === 'board' ? 'Kanban Board' : currentView}
             </h1>
           </div>
-          <div className="flex items-center gap-2 lg:gap-4">
+          <div className="flex items-center gap-1.5 sm:gap-2 lg:gap-4 flex-shrink-0">
             <Auth />
             <div className="h-8 w-px bg-slate-200 dark:bg-slate-700 mx-1 hidden sm:block"></div>
             <ThemeToggle />
