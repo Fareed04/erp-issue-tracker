@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Issue, CreateIssuePayload, IssueType, IssueStatus, IssuePriority, UserProfile, ActivityLog } from '../types';
-import { X, Save, Trash2, User, Clock } from 'lucide-react';
+import { X, Save, Trash2, User, Clock, Edit3 } from 'lucide-react';
 import * as api from '../services/api';
 import { Avatar } from './Avatar';
 import { formatDistanceToNow } from 'date-fns';
@@ -21,6 +21,7 @@ export const IssueModal: React.FC<IssueModalProps> = ({ isOpen, onClose, onSave,
   const [comments, setComments] = useState<any[]>([]);
   const [newComment, setNewComment] = useState('');
   const [activeTab, setActiveTab] = useState<'details' | 'activity' | 'comments'>('details');
+  const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState<any>({
     title: '',
     description: '',
@@ -78,6 +79,7 @@ export const IssueModal: React.FC<IssueModalProps> = ({ isOpen, onClose, onSave,
         delay_cause: issue.delay_cause || '',
         dueDate: issue.dueDate || '',
       });
+      setIsEditing(false);
     } else {
       setFormData({
         title: '',
@@ -92,6 +94,7 @@ export const IssueModal: React.FC<IssueModalProps> = ({ isOpen, onClose, onSave,
         dueDate: '',
       });
       setActiveTab('details');
+      setIsEditing(true);
     }
     setShowDeleteConfirm(false);
   }, [issue, isOpen]);
@@ -161,7 +164,7 @@ export const IssueModal: React.FC<IssueModalProps> = ({ isOpen, onClose, onSave,
 
         <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center bg-slate-50 dark:bg-slate-800/50">
           <h2 className="text-xl font-bold text-slate-800 dark:text-white">
-            {issue ? 'Edit Issue' : 'Create New Issue'}
+            {issue ? (isEditing ? 'Edit Issue' : 'Issue Details') : 'Create New Issue'}
           </h2>
           <button onClick={onClose} className="p-2 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-full text-slate-500 dark:text-slate-400 transition-colors">
             <X size={20} />
@@ -206,6 +209,68 @@ export const IssueModal: React.FC<IssueModalProps> = ({ isOpen, onClose, onSave,
 
         <div className="p-6 overflow-y-auto flex-1">
           {activeTab === 'details' ? (
+            !isEditing && issue ? (
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">Title</h3>
+                  <p className="text-lg font-semibold text-slate-900 dark:text-slate-100">{issue.title}</p>
+                </div>
+                
+                <div>
+                  <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">Description</h3>
+                  {issue.description ? (
+                    <div className="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-lg border border-slate-200 dark:border-slate-700/50 text-slate-800 dark:text-slate-200 whitespace-pre-wrap text-sm">
+                      {issue.description}
+                    </div>
+                  ) : (
+                    <p className="text-slate-500 dark:text-slate-500 italic text-sm">No description provided.</p>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="bg-slate-50 dark:bg-slate-900/50 p-3 rounded-lg border border-slate-200 dark:border-slate-700/50">
+                    <span className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Type</span>
+                    <span className="capitalize font-medium text-slate-900 dark:text-slate-100">{issue.type}</span>
+                  </div>
+                  <div className="bg-slate-50 dark:bg-slate-900/50 p-3 rounded-lg border border-slate-200 dark:border-slate-700/50">
+                    <span className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Status</span>
+                    <span className="capitalize font-medium text-slate-900 dark:text-slate-100">{issue.status.replace('_', ' ')}</span>
+                  </div>
+                  <div className="bg-slate-50 dark:bg-slate-900/50 p-3 rounded-lg border border-slate-200 dark:border-slate-700/50">
+                    <span className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Priority</span>
+                    <span className="capitalize font-medium text-slate-900 dark:text-slate-100">{issue.priority}</span>
+                  </div>
+                  <div className="bg-slate-50 dark:bg-slate-900/50 p-3 rounded-lg border border-slate-200 dark:border-slate-700/50">
+                    <span className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Due Date</span>
+                    <span className="font-medium text-slate-900 dark:text-slate-100">{issue.dueDate ? new Date(issue.dueDate).toLocaleDateString() : 'None'}</span>
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-2">Assignee</h3>
+                  {issue.assigneeUid ? (
+                    <div className="flex items-center gap-3">
+                      <Avatar src={issue.assigneePhoto || undefined} name={issue.assigneeName || 'Unknown'} size="sm" />
+                      <span className="font-medium text-slate-900 dark:text-slate-100">{issue.assigneeName}</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400">
+                      <div className="w-8 h-8 rounded-full border-2 border-dashed border-slate-300 dark:border-slate-600 flex items-center justify-center">
+                        <User size={14} />
+                      </div>
+                      <span className="italic text-sm">Unassigned</span>
+                    </div>
+                  )}
+                </div>
+
+                {issue.status === 'blocked' && issue.delay_cause && (
+                  <div className="bg-amber-50 dark:bg-amber-900/20 p-4 rounded-lg border border-amber-200 dark:border-amber-900/50 mt-6">
+                    <h3 className="text-sm font-bold text-amber-900 dark:text-amber-400 mb-1">Delay Cause / Blocker</h3>
+                    <p className="text-amber-800 dark:text-amber-200 text-sm">{issue.delay_cause}</p>
+                  </div>
+                )}
+              </div>
+            ) : (
             <form id="issue-form" onSubmit={handleSubmit} className="space-y-6">
               <div>
                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Title *</label>
@@ -315,6 +380,7 @@ export const IssueModal: React.FC<IssueModalProps> = ({ isOpen, onClose, onSave,
                 </div>
               )}
             </form>
+            )
           ) : activeTab === 'activity' ? (
             <div className="space-y-6">
               {activities.length === 0 ? (
@@ -421,7 +487,7 @@ export const IssueModal: React.FC<IssueModalProps> = ({ isOpen, onClose, onSave,
         </div>
 
         <div className="px-6 py-4 border-t border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 flex justify-between items-center">
-          {issue && onDelete && activeTab === 'details' ? (
+          {issue && onDelete && activeTab === 'details' && isEditing ? (
             <button
               id="delete-issue-btn"
               type="button"
@@ -438,12 +504,15 @@ export const IssueModal: React.FC<IssueModalProps> = ({ isOpen, onClose, onSave,
           <div className="flex gap-3">
             <button
               type="button"
-              onClick={onClose}
+              onClick={() => {
+                if (isEditing && issue) setIsEditing(false);
+                else onClose();
+              }}
               className="px-4 py-2 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors font-medium"
             >
-              {activeTab === 'details' ? 'Cancel' : 'Close'}
+              {activeTab === 'details' && isEditing ? 'Cancel' : 'Close'}
             </button>
-            {activeTab === 'details' && (
+            {activeTab === 'details' && isEditing && (
               <button
                 type="submit"
                 form="issue-form"
@@ -451,6 +520,16 @@ export const IssueModal: React.FC<IssueModalProps> = ({ isOpen, onClose, onSave,
               >
                 <Save size={18} />
                 Save
+              </button>
+            )}
+            {activeTab === 'details' && !isEditing && issue && (
+              <button
+                type="button"
+                onClick={() => setIsEditing(true)}
+                className="flex items-center gap-2 px-6 py-2 bg-tawny-port hover:bg-tawny-port/90 text-white rounded-lg transition-colors font-medium shadow-sm"
+              >
+                <Edit3 size={18} />
+                Edit
               </button>
             )}
           </div>
