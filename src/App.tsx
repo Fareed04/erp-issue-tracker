@@ -89,39 +89,59 @@ export default function App() {
     await api.updateUserProfile(updatedProfile);
   };
 
+  const issuesRef = React.useRef(issues);
+  useEffect(() => {
+    issuesRef.current = issues;
+  }, [issues]);
+
   // Deadline checker
   useEffect(() => {
-    if (!user) return;
+    if (!user || issues.length === 0 || !userProfile) return;
     
     const checkDeadlines = async () => {
+      if (userProfile?.preferences?.notifyOnDeadline === false) return;
+
       const now = new Date();
       const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
       
-      const profile = await api.getUserProfile(user.uid);
-      if (profile?.preferences?.notifyOnDeadline === false) return;
+      const currentIssues = issuesRef.current;
 
-      issues.forEach(async (issue) => {
+      // Use a standard for loop to avoid parallel race conditions with writes
+      for (const issue of currentIssues) {
         if (issue.assigneeUid === user.uid && issue.dueDate && !issue.deadlineNotified && issue.status !== 'done') {
           const dueDate = new Date(issue.dueDate);
           if (dueDate <= tomorrow && dueDate >= now) {
-            await api.createNotification(user.uid, {
-              title: 'Approaching Deadline',
-              message: `Task "${issue.title}" is due soon (${dueDate.toLocaleDateString()})`,
-              type: 'warning',
-              linkToIssueId: issue.id,
-            });
-            // Mark as notified
-            await api.updateIssue(issue.id, { deadlineNotified: true }, null);
+            try {
+              await api.createNotification(user.uid, {
+                title: 'Approaching Deadline',
+                message: `Task "${issue.title}" is due soon (${dueDate.toLocaleDateString()})`,
+                type: 'warning',
+                linkToIssueId: issue.id,
+              });
+              // Mark as notified
+              await api.updateIssue(issue.id, { deadlineNotified: true }, null);
+            } catch (err) {
+              console.error('Failed to process deadline notification', err);
+            }
           }
         }
-      });
+      }
     };
 
-    checkDeadlines();
-    // Check every hour
+    // Run once after initial setup
+    const timeout = setTimeout(() => {
+      checkDeadlines();
+    }, 5000);
+    
+    // Check periodically
     const interval = setInterval(checkDeadlines, 60 * 60 * 1000);
-    return () => clearInterval(interval);
-  }, [issues, user]);
+    
+    return () => {
+      clearTimeout(timeout);
+      clearInterval(interval);
+    };
+  }, [user?.uid, userProfile?.preferences?.notifyOnDeadline]); // only run when user changes, use ref for issues to avoid re-triggering and stale closures
+
 
   const addNotification = (message: string, type: 'success'|'error'|'info'|'warning') => {
     const id = Date.now().toString();
