@@ -1,6 +1,7 @@
-import React from 'react';
-import { FilterOptions } from '../types';
+import React, { useState, useEffect } from 'react';
+import { FilterOptions, UserProfile } from '../types';
 import { Search, Filter, Calendar, X } from 'lucide-react';
+import * as api from '../services/api';
 
 interface FilterBarProps {
   filters: FilterOptions;
@@ -9,6 +10,20 @@ interface FilterBarProps {
 }
 
 export const FilterBar: React.FC<FilterBarProps> = ({ filters, onFilterChange, onClearFilters }) => {
+  const [users, setUsers] = useState<UserProfile[]>([]);
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const profiles = await api.getAllUserProfiles();
+        setUsers(profiles);
+      } catch (err) {
+        console.error('Failed to load users for filters', err);
+      }
+    };
+    fetchUsers();
+  }, []);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     onFilterChange({ ...filters, [name]: value });
@@ -83,25 +98,31 @@ export const FilterBar: React.FC<FilterBarProps> = ({ filters, onFilterChange, o
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 w-full sm:w-auto">
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 w-full sm:w-auto">
             <span className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Assignee:</span>
-            <input
-              type="text"
+            <select
               name="assignee"
               value={filters.assignee}
               onChange={handleChange}
-              placeholder="Filter by assignee..."
-              className="w-full sm:w-auto px-3 py-1.5 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-tawny-port outline-none text-sm bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500"
-            />
+              className="w-full sm:w-auto px-3 py-1.5 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-tawny-port outline-none text-sm bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100"
+            >
+              <option value="">All Assignees</option>
+              {users.map(u => (
+                <option key={u.uid} value={u.displayName}>{u.displayName}</option>
+              ))}
+            </select>
           </div>
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 w-full sm:w-auto">
             <span className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Reporter:</span>
-            <input
-              type="text"
+            <select
               name="reporter"
               value={filters.reporter}
               onChange={handleChange}
-              placeholder="Filter by reporter..."
-              className="w-full sm:w-auto px-3 py-1.5 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-tawny-port outline-none text-sm bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500"
-            />
+              className="w-full sm:w-auto px-3 py-1.5 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-tawny-port outline-none text-sm bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100"
+            >
+              <option value="">All Reporters</option>
+              {users.map(u => (
+                <option key={u.uid} value={u.displayName}>{u.displayName}</option>
+              ))}
+            </select>
           </div>
         </div>
 
