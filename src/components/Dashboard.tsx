@@ -7,7 +7,7 @@ interface DashboardProps {
   issues: Issue[];
 }
 
-const COLORS = ['#74253A', '#7B5203', '#000000', '#10b981'];
+const COLORS = ['var(--color-chart-1)', 'var(--color-chart-2)', 'var(--color-chart-3)', 'var(--color-chart-4)'];
 
 export const Dashboard: React.FC<DashboardProps> = ({ issues }) => {
   const stats = useMemo(() => {
@@ -63,11 +63,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ issues }) => {
           <div className="h-72">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={statusData}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--color-border)" />
                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fontSize: 12, fill: 'currentColor'}} className="text-slate-500 dark:text-slate-400" />
                 <YAxis axisLine={false} tickLine={false} tick={{fontSize: 12, fill: 'currentColor'}} width={30} className="text-slate-500 dark:text-slate-400" />
-                <Tooltip cursor={{fill: 'rgba(148, 163, 184, 0.1)'}} contentStyle={{ backgroundColor: 'var(--color-bg)', borderColor: 'var(--color-border)', color: 'var(--color-text)' }} />
-                <Bar dataKey="value" fill="#74253A" radius={[4, 4, 0, 0]} />
+                <Tooltip cursor={{fill: 'var(--color-border)'}} contentStyle={{ backgroundColor: 'var(--color-bg)', borderColor: 'var(--color-border)', color: 'var(--color-text)' }} />
+                <Bar dataKey="value" fill="var(--color-chart-1)" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -87,6 +87,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ issues }) => {
                   outerRadius={100}
                   paddingAngle={5}
                   dataKey="value"
+                  stroke="var(--color-bg)"
+                  strokeWidth={2}
                 >
                   {typeData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />

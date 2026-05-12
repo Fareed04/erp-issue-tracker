@@ -31,8 +31,8 @@ export const FilterBar: React.FC<FilterBarProps> = ({ filters, onFilterChange, o
 
   return (
     <div className="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 mb-6 space-y-4">
-      <div className="flex flex-wrap gap-4 items-center">
-        <div className="flex-1 min-w-[200px] relative">
+      <div className="flex flex-col lg:flex-row flex-wrap gap-4 items-start lg:items-center">
+        <div className="flex-1 w-full relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" size={18} />
           <input
             type="text"
@@ -83,21 +83,21 @@ export const FilterBar: React.FC<FilterBarProps> = ({ filters, onFilterChange, o
             <option value="high">High</option>
             <option value="critical">Critical</option>
           </select>
-        </div>
 
-        <button
-          onClick={onClearFilters}
-          className="flex items-center gap-1 text-sm text-slate-500 dark:text-slate-400 hover:text-tawny-port dark:hover:text-tawny-port transition-colors px-2 py-1"
-        >
-          <X size={14} />
-          Clear
-        </button>
+          <button
+            onClick={onClearFilters}
+            className="flex items-center gap-1 text-sm text-slate-500 dark:text-slate-400 hover:text-tawny-port ml-2 transition-colors px-2 py-1"
+          >
+            <X size={14} />
+            Clear
+          </button>
+        </div>
       </div>
 
-      <div className="flex flex-col sm:flex-row flex-wrap gap-4 items-start sm:items-center pt-2 border-t border-slate-100 dark:border-slate-700">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 w-full sm:w-auto">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 w-full sm:w-auto">
-            <span className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Assignee:</span>
+      <div className="flex flex-col lg:flex-row flex-wrap gap-6 items-start lg:items-center">
+        <div className="flex flex-wrap items-center gap-6">
+          <div className="flex items-center gap-3">
+            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Assignee:</span>
             <select
               name="assignee"
               value={filters.assignee}
@@ -110,8 +110,8 @@ export const FilterBar: React.FC<FilterBarProps> = ({ filters, onFilterChange, o
               ))}
             </select>
           </div>
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 w-full sm:w-auto">
-            <span className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Reporter:</span>
+          <div className="flex items-center gap-3">
+            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Reporter:</span>
             <select
               name="reporter"
               value={filters.reporter}
@@ -126,7 +126,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({ filters, onFilterChange, o
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 sm:ml-auto w-full sm:w-auto">
+        <div className="flex flex-wrap items-center gap-2 lg:ml-auto">
           <Calendar size={16} className="text-slate-400 dark:text-slate-500 hidden sm:block" />
           <input
             type="date"
