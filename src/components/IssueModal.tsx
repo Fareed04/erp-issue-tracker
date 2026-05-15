@@ -269,6 +269,39 @@ export const IssueModal: React.FC<IssueModalProps> = ({ isOpen, onClose, onSave,
                     <p className="text-amber-800 dark:text-amber-200 text-sm">{issue.delay_cause}</p>
                   </div>
                 )}
+
+                <div className="pt-6 mt-6 border-t border-slate-200 dark:border-slate-700/50">
+                  <h3 className="text-sm font-medium text-slate-800 dark:text-slate-200 mb-4 flex items-center gap-2">
+                    <Clock size={16} className="text-slate-400" />
+                    Recent History
+                  </h3>
+                  {activities.length === 0 ? (
+                    <p className="text-sm text-slate-500 italic">No history available.</p>
+                  ) : (
+                    <div className="space-y-4">
+                      {activities.slice(0, 3).map((activity) => (
+                        <div key={activity.id} className="text-sm">
+                          <div className="flex items-center gap-2 mb-1">
+                            <Avatar src={activity.userPhoto || undefined} name={activity.userName} size="sm" className="w-5 h-5 text-[10px]" />
+                            <span className="font-medium text-slate-700 dark:text-slate-300">{activity.userName}</span>
+                            <span className="text-slate-500 text-xs">
+                              {formatDistanceToNow(new Date(activity.timestamp), { addSuffix: true })}
+                            </span>
+                          </div>
+                          <p className="text-slate-600 dark:text-slate-400 pl-7 text-xs">{activity.details}</p>
+                        </div>
+                      ))}
+                      {activities.length > 3 && (
+                        <button 
+                          onClick={() => setActiveTab('activity')}
+                          className="text-xs text-tawny-port hover:text-tawny-port/80 font-medium pl-7 mt-2"
+                        >
+                          View all history
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
             ) : (
             <form id="issue-form" onSubmit={handleSubmit} className="space-y-6">
