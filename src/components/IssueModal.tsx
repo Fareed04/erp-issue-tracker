@@ -12,9 +12,10 @@ interface IssueModalProps {
   onSave: (payload: CreateIssuePayload) => void;
   onDelete?: (id: string) => void;
   issue?: Issue | null;
+  userProfile?: UserProfile | null;
 }
 
-export const IssueModal: React.FC<IssueModalProps> = ({ isOpen, onClose, onSave, onDelete, issue }) => {
+export const IssueModal: React.FC<IssueModalProps> = ({ isOpen, onClose, onSave, onDelete, issue, userProfile }) => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [activities, setActivities] = useState<ActivityLog[]>([]);
@@ -130,6 +131,12 @@ export const IssueModal: React.FC<IssueModalProps> = ({ isOpen, onClose, onSave,
       onDelete(issue.id);
     }
   };
+
+  const canDelete = userProfile?.role === 'Admin';
+  const canEdit = !issue || 
+    userProfile?.role === 'Admin' || 
+    userProfile?.role === 'Manager' || 
+    (issue && (userProfile?.uid === issue.assigneeUid || userProfile?.uid === issue.reporterUid));
 
   return (
     <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -520,7 +527,7 @@ export const IssueModal: React.FC<IssueModalProps> = ({ isOpen, onClose, onSave,
         </div>
 
         <div className="px-6 py-4 border-t border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 flex justify-between items-center">
-          {issue && onDelete && activeTab === 'details' && isEditing ? (
+          {issue && onDelete && activeTab === 'details' && isEditing && canDelete ? (
             <button
               id="delete-issue-btn"
               type="button"
@@ -545,7 +552,7 @@ export const IssueModal: React.FC<IssueModalProps> = ({ isOpen, onClose, onSave,
             >
               {activeTab === 'details' && isEditing ? 'Cancel' : 'Close'}
             </button>
-            {activeTab === 'details' && isEditing && (
+            {activeTab === 'details' && isEditing && canEdit && (
               <button
                 type="submit"
                 form="issue-form"
@@ -555,7 +562,7 @@ export const IssueModal: React.FC<IssueModalProps> = ({ isOpen, onClose, onSave,
                 Save
               </button>
             )}
-            {activeTab === 'details' && !isEditing && issue && (
+            {activeTab === 'details' && !isEditing && issue && canEdit && (
               <button
                 type="button"
                 onClick={() => setIsEditing(true)}

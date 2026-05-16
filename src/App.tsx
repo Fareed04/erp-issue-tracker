@@ -16,6 +16,7 @@ import * as XLSX from 'xlsx';
 import { FilterBar } from './components/FilterBar';
 import { NotificationCenter } from './components/NotificationCenter';
 import { ThemeToggle } from './components/ThemeToggle';
+import { UsersManagement } from './components/UsersManagement';
 
 import { auth } from './firebase';
 import { useAuthState } from 'react-firebase-hooks/auth';
@@ -38,7 +39,7 @@ const initialFilters: FilterOptions = {
 export default function App() {
   const [user, authLoading] = useAuthState(auth);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-  const [currentView, setCurrentView] = useState<'dashboard' | 'board' | 'list'>('dashboard');
+  const [currentView, setCurrentView] = useState<'dashboard' | 'board' | 'list' | 'users'>('dashboard');
   const [issues, setIssues] = useState<Issue[]>([]);
   const [filters, setFilters] = useState<FilterOptions>(initialFilters);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -231,7 +232,7 @@ export default function App() {
 
   const handleDeleteIssue = async (id: string) => {
     try {
-      await api.deleteIssue(id);
+      await api.deleteIssue(id, user);
       setIsModalOpen(false);
       setEditingIssue(null);
       addNotification('Issue deleted successfully.', 'info');
@@ -401,6 +402,9 @@ export default function App() {
                   onBulkUpdate={handleBulkUpdate}
                 />
               )}
+              {currentView === 'users' && userProfile && (
+                <UsersManagement currentUserProfile={userProfile} />
+              )}
             </div>
           )}
         </div>
@@ -415,6 +419,7 @@ export default function App() {
         onSave={handleSaveIssue}
         onDelete={handleDeleteIssue}
         issue={editingIssue}
+        userProfile={userProfile}
       />
 
       {userProfile && !userProfile.tutorialCompleted && (

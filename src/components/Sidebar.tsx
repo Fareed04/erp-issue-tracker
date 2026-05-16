@@ -1,19 +1,24 @@
 import React from 'react';
-import { LayoutDashboard, KanbanSquare, List, X } from 'lucide-react';
+import { LayoutDashboard, KanbanSquare, List, X, Users } from 'lucide-react';
 import { clsx } from 'clsx';
 
 interface SidebarProps {
-  currentView: 'dashboard' | 'board' | 'list';
-  onViewChange: (view: 'dashboard' | 'board' | 'list') => void;
+  currentView: 'dashboard' | 'board' | 'list' | 'users';
+  onViewChange: (view: 'dashboard' | 'board' | 'list' | 'users') => void;
   isOpen: boolean;
   onClose: () => void;
+  userProfile?: import('../types').UserProfile | null;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange, isOpen, onClose }) => {
+export const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange, isOpen, onClose, userProfile }) => {
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'board', label: 'Kanban Board', icon: KanbanSquare },
     { id: 'list', label: 'Issue List', icon: List },
+  ] as const;
+  
+  const adminNavItems = [
+    { id: 'users', label: 'Manage Users', icon: Users },
   ] as const;
 
   return (
@@ -62,6 +67,34 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange, isO
               </button>
             );
           })}
+          
+          {userProfile?.role === 'Admin' && (
+            <>
+              <div className="pt-4 pb-2">
+                <span className="px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Admin</span>
+              </div>
+              {adminNavItems.map(item => {
+                const Icon = item.icon;
+                const isActive = currentView === item.id;
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => {
+                      onViewChange(item.id);
+                      onClose();
+                    }}
+                    className={clsx(
+                      "w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-sm font-medium",
+                      isActive ? "bg-tawny-port text-white shadow-lg shadow-tawny-port/20" : "hover:bg-slate-800 hover:text-white"
+                    )}
+                  >
+                    <Icon size={18} />
+                    {item.label}
+                  </button>
+                );
+              })}
+            </>
+          )}
         </nav>
       </aside>
     </>

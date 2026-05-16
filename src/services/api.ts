@@ -19,6 +19,23 @@ import { Issue, CreateIssuePayload, BulkUpdatePayload, UserProfile, ActivityLog,
 const ISSUES_COLLECTION = 'issues';
 const USERS_COLLECTION = 'users';
 
+export const checkPermission = async (userId: string | undefined, action: 'create' | 'update' | 'delete', issue?: Issue) => {
+  if (!userId) throw new Error('Unauthorized');
+  const profile = await getUserProfile(userId);
+  const role = profile?.role || 'Developer';
+  
+  if (role === 'Admin') return true;
+  
+  if (action === 'delete') throw new Error('Only Admins can delete issues.');
+  if (action === 'update' && issue) {
+    if (role === 'Manager') return true;
+    if (issue.assigneeUid !== userId && issue.reporterUid !== userId) {
+      throw new Error('Developers can only update issues assigned to them or reported by them.');
+    }
+  }
+  return true;
+};
+
 export const logActivity = async (
   issueId: string,
   user: { uid: string; displayName: string | null; photoURL: string | null },
@@ -137,6 +154,10 @@ export const subscribeToIssues = (callback: (issues: Issue[]) => void) => {
 };
 
 export const createIssue = async (payload: CreateIssuePayload, user: any): Promise<Issue> => {
+  if (user) {
+    await checkPermission(user.uid, 'create');
+  }
+
   const now = new Date().toISOString();
   const data = {
     ...payload,
@@ -164,11 +185,15 @@ export const createIssue = async (payload: CreateIssuePayload, user: any): Promi
 };
 
 export const updateIssue = async (id: string, payload: Partial<Issue>, user: any): Promise<Issue> => {
-  const now = new Date().toISOString();
   const docRef = doc(db, ISSUES_COLLECTION, id);
-  
   const existingDoc = await getDoc(docRef);
   const existingData = existingDoc.data() as Issue;
+
+  if (user) {
+    await checkPermission(user.uid, 'update', existingData);
+  }
+
+  const now = new Date().toISOString();
 
   const data = {
     ...payload,
@@ -238,12 +263,23 @@ export const updateIssue = async (id: string, payload: Partial<Issue>, user: any
   return { id: updatedDoc.id, ...updatedDoc.data() } as Issue;
 };
 
-export const deleteIssue = async (id: string): Promise<void> => {
+export const deleteIssue = async (id: string, user?: any): Promise<void> => {
+  if (user) {
+    await checkPermission(user.uid, 'delete');
+  }
   const docRef = doc(db, ISSUES_COLLECTION, id);
   await deleteDoc(docRef);
 };
 
 export const bulkUpdateIssues = async (payload: BulkUpdatePayload, user: any): Promise<void> => {
+  if (user) {
+    const profile = await getUserProfile(user.uid);
+    const role = profile?.role || 'Developer';
+    if (role === 'Developer') {
+      throw new Error('Developers cannot perform bulk updates.');
+    }
+  }
+
   const batch = writeBatch(db);
   const now = new Date().toISOString();
   

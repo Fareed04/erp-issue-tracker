@@ -2,6 +2,8 @@ export type IssueType = 'task' | 'bug' | 'issue';
 export type IssueStatus = 'todo' | 'in_progress' | 'blocked' | 'done';
 export type IssuePriority = 'low' | 'medium' | 'high' | 'critical';
 
+export type UserRole = 'Admin' | 'Manager' | 'Developer';
+
 export interface Issue {
   id: string;
   title: string;
@@ -34,6 +36,7 @@ export interface UserProfile {
   displayName: string;
   email: string;
   photoURL: string | null;
+  role?: UserRole;
   preferences?: NotificationPreferences;
   tutorialCompleted?: boolean;
   tutorialStep?: number;
