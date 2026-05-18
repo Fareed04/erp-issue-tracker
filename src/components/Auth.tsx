@@ -38,6 +38,7 @@ export const Auth: React.FC = () => {
             displayName: result.user.displayName || 'Anonymous',
             email: result.user.email || '',
             photoURL: result.user.photoURL,
+            role: result.user.email === 'ologundudufareed@gmail.com' ? 'Admin' : 'Developer',
             tutorialCompleted: false,
             tutorialStep: 0,
             preferences: {

