@@ -13,9 +13,10 @@ interface IssueModalProps {
   onDelete?: (id: string) => void;
   issue?: Issue | null;
   userProfile?: UserProfile | null;
+  allIssues?: Issue[];
 }
 
-export const IssueModal: React.FC<IssueModalProps> = ({ isOpen, onClose, onSave, onDelete, issue, userProfile }) => {
+export const IssueModal: React.FC<IssueModalProps> = ({ isOpen, onClose, onSave, onDelete, issue, userProfile, allIssues = [] }) => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [activities, setActivities] = useState<ActivityLog[]>([]);
@@ -34,6 +35,7 @@ export const IssueModal: React.FC<IssueModalProps> = ({ isOpen, onClose, onSave,
     assigneePhoto: '',
     delay_cause: '',
     dueDate: '',
+    links: [],
   });
 
   useEffect(() => {
@@ -79,6 +81,7 @@ export const IssueModal: React.FC<IssueModalProps> = ({ isOpen, onClose, onSave,
         assigneePhoto: issue.assigneePhoto || '',
         delay_cause: issue.delay_cause || '',
         dueDate: issue.dueDate || '',
+        links: issue.links || [],
       });
       setIsEditing(false);
     } else {
@@ -93,6 +96,7 @@ export const IssueModal: React.FC<IssueModalProps> = ({ isOpen, onClose, onSave,
         assigneePhoto: '',
         delay_cause: '',
         dueDate: '',
+        links: [],
       });
       setActiveTab('details');
       setIsEditing(true);
@@ -123,7 +127,11 @@ export const IssueModal: React.FC<IssueModalProps> = ({ isOpen, onClose, onSave,
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSave(formData);
+    const payload = {
+      ...formData,
+      links: formData.links ? formData.links.filter((l: any) => l.targetIssueId) : []
+    };
+    onSave(payload);
   };
 
   const handleDelete = () => {
@@ -277,6 +285,56 @@ export const IssueModal: React.FC<IssueModalProps> = ({ isOpen, onClose, onSave,
                   </div>
                 )}
 
+                {(() => {
+                  const outgoingLinks = issue.links || [];
+                  const incomingLinks = allIssues.filter(i => i.links?.some(l => l.targetIssueId === issue.id)).flatMap(i => 
+                    i.links!.filter(l => l.targetIssueId === issue.id).map(l => ({
+                      id: `${i.id}-${l.id}`,
+                      type: l.type === 'blocks' ? 'is_blocked_by' : l.type === 'is_blocked_by' ? 'blocks' : 'relates_to',
+                      targetIssueId: i.id
+                    }))
+                  );
+                  
+                  // Deduplicate links by targetIssueId just in case
+                  const allLinksMap = new Map();
+                  [...outgoingLinks, ...incomingLinks].forEach(l => {
+                    if (!allLinksMap.has(l.targetIssueId)) {
+                      allLinksMap.set(l.targetIssueId, l);
+                    }
+                  });
+                  const allLinks = Array.from(allLinksMap.values());
+
+                  if (allLinks.length === 0) return null;
+
+                  return (
+                    <div className="pt-6 mt-6 border-t border-slate-200 dark:border-slate-700/50">
+                      <h3 className="text-sm font-medium text-slate-800 dark:text-slate-200 mb-4">Related Issues</h3>
+                      <div className="space-y-2">
+                        {allLinks.map((link: any) => {
+                          const targetIssue = allIssues.find(i => i.id === link.targetIssueId);
+                          if (!targetIssue) return null;
+                          const label = link.type === 'blocks' ? 'Blocks' : link.type === 'is_blocked_by' ? 'Is Blocked By' : 'Relates To';
+                          const color = link.type === 'blocks' ? 'text-amber-600 bg-amber-50 border-amber-200 dark:bg-amber-900/20 dark:border-amber-800' :
+                                        link.type === 'is_blocked_by' ? 'text-red-600 bg-red-50 border-red-200 dark:bg-red-900/20 dark:border-red-800' :
+                                        'text-blue-600 bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:border-blue-800';
+                          return (
+                            <div key={link.id} className="flex items-center justify-between bg-slate-50 dark:bg-slate-900/50 p-3 rounded-lg border border-slate-200 dark:border-slate-700/50">
+                              <div className="flex gap-3 items-center min-w-0">
+                                <span className={`px-2 py-0.5 text-xs font-semibold rounded border ${color} whitespace-nowrap`}>
+                                  {label}
+                                </span>
+                                <span className="text-sm font-medium text-slate-700 dark:text-slate-300 truncate">
+                                  {targetIssue.title}
+                                </span>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })()}
+
                 <div className="pt-6 mt-6 border-t border-slate-200 dark:border-slate-700/50">
                   <h3 className="text-sm font-medium text-slate-800 dark:text-slate-200 mb-4 flex items-center gap-2">
                     <Clock size={16} className="text-slate-400" />
@@ -419,6 +477,64 @@ export const IssueModal: React.FC<IssueModalProps> = ({ isOpen, onClose, onSave,
                   />
                 </div>
               )}
+
+              <div className="pt-4 border-t border-slate-200 dark:border-slate-700">
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Related Issues</label>
+                <div className="space-y-3 mb-4">
+                  {formData.links && formData.links.map((link: any, index: number) => (
+                    <div key={index} className="flex gap-2 items-center">
+                      <select
+                        value={link.type}
+                        onChange={(e) => {
+                          const newLinks = [...formData.links];
+                          newLinks[index].type = e.target.value;
+                          setFormData({ ...formData, links: newLinks });
+                        }}
+                        className="px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg outline-none bg-white dark:bg-slate-900 text-sm w-1/3"
+                      >
+                        <option value="relates_to">Relates To</option>
+                        <option value="blocks">Blocks</option>
+                        <option value="is_blocked_by">Is Blocked By</option>
+                      </select>
+                      <select
+                        value={link.targetIssueId}
+                        onChange={(e) => {
+                          const newLinks = [...formData.links];
+                          newLinks[index].targetIssueId = e.target.value;
+                          setFormData({ ...formData, links: newLinks });
+                        }}
+                        className="px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg outline-none bg-white dark:bg-slate-900 flex-1 text-sm"
+                      >
+                        <option value="">Select Issue...</option>
+                        {allIssues.filter(i => i.id !== issue?.id).map(i => (
+                          <option key={i.id} value={i.id}>[{i.type}] {i.title}</option>
+                        ))}
+                      </select>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const newLinks = formData.links.filter((_: any, i: number) => i !== index);
+                          setFormData({ ...formData, links: newLinks });
+                        }}
+                        className="p-2 text-slate-400 hover:text-red-500 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setFormData({ 
+                    ...formData, 
+                    links: [...(formData.links || []), { id: Date.now().toString(), type: 'relates_to', targetIssueId: '' }] 
+                  })}
+                  className="text-sm text-tawny-port hover:text-peru-tan font-medium flex items-center gap-1 transition-colors"
+                >
+                  + Add Link
+                </button>
+              </div>
+
             </form>
             )
           ) : activeTab === 'activity' ? (

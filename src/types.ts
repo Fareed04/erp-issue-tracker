@@ -4,6 +4,14 @@ export type IssuePriority = 'low' | 'medium' | 'high' | 'critical';
 
 export type UserRole = 'Admin' | 'Manager' | 'Developer';
 
+export type IssueLinkType = 'blocks' | 'is_blocked_by' | 'relates_to';
+
+export interface IssueLink {
+  id: string;
+  type: IssueLinkType;
+  targetIssueId: string;
+}
+
 export interface Issue {
   id: string;
   title: string;
@@ -20,6 +28,7 @@ export interface Issue {
   delay_cause: string | null;
   dueDate?: string | null;
   deadlineNotified?: boolean;
+  links?: IssueLink[];
   created_at: string;
   updated_at: string;
 }

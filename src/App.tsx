@@ -421,6 +421,7 @@ export default function App() {
         onDelete={handleDeleteIssue}
         issue={editingIssue}
         userProfile={userProfile}
+        allIssues={issues}
       />
 
       {userProfile && !userProfile.tutorialCompleted && (
