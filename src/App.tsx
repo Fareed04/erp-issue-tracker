@@ -247,6 +247,27 @@ export default function App() {
     }
   };
 
+  const handleUpdateIssueField = async (id: string, updates: Partial<Issue>) => {
+    if (!user) return;
+    try {
+      await api.updateIssue(id, updates, user);
+      
+      let message = 'Issue updated.';
+      if (updates.status) message = `Status updated to ${updates.status.replace('_', ' ')}.`;
+      else if (updates.assigneeUid !== undefined) message = `Assignee updated.`;
+      else if (updates.priority) message = `Priority updated to ${updates.priority}.`;
+      
+      addNotification(message, 'info');
+      
+      if (userProfile && !userProfile.tutorialCompleted && userProfile.tutorialStep === 3 && updates.status === 'done') {
+        handleTutorialNext();
+      }
+    } catch (error) {
+      console.error('Failed to update issue', error);
+      addNotification('Failed to update issue.', 'error');
+    }
+  };
+
   const handleUpdateStatus = async (id: string, status: IssueStatus) => {
     if (!user) return;
     try {
@@ -393,6 +414,7 @@ export default function App() {
                 <Board 
                   issues={filteredIssues} 
                   onUpdateStatus={handleUpdateStatus} 
+                  onUpdateIssueField={handleUpdateIssueField}
                   onEditIssue={openEditIssueModal} 
                 />
               )}
