@@ -30,9 +30,12 @@ export const FilterBar: React.FC<FilterBarProps> = ({ filters, onFilterChange, o
   };
 
   return (
-    <div className="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 mb-6 flex flex-col gap-4">
-      <div className="flex flex-col lg:flex-row flex-wrap gap-4 items-start lg:items-center">
-        <div className="flex-1 w-full lg:w-auto min-w-[200px] relative">
+    <div className="bg-white dark:bg-slate-800 p-4 lg:p-5 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 mb-6 w-full flex flex-col gap-4 overflow-hidden">
+      
+      {/* Top Row: Search & Core Filters */}
+      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-4 w-full">
+        {/* Search */}
+        <div className="md:col-span-3 lg:col-span-2 xl:col-span-2 relative w-full">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" size={18} />
           <input
             type="text"
@@ -40,100 +43,98 @@ export const FilterBar: React.FC<FilterBarProps> = ({ filters, onFilterChange, o
             value={filters.search}
             onChange={handleChange}
             placeholder="Search issues..."
-            className="w-full pl-10 pr-4 h-10 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-tawny-port focus:border-tawny-port outline-none transition-all bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500"
+            className="w-full pl-10 pr-4 h-10 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-tawny-port outline-none transition-all bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-slate-100 placeholder-slate-500"
           />
         </div>
         
-        <div className="flex flex-wrap items-center gap-2 shrink-0">
-          <Filter size={18} className="text-slate-400 dark:text-slate-500 hidden sm:block" />
-          <select
-            name="type"
-            value={filters.type}
-            onChange={handleChange}
-            className="flex-1 sm:flex-none px-3 h-10 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-tawny-port outline-none bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 text-sm min-w-[110px]"
-          >
-            <option value="">All Types</option>
-            <option value="task">Task</option>
-            <option value="bug">Bug</option>
-            <option value="issue">Issue</option>
-          </select>
-          
-          <select
-            name="status"
-            value={filters.status}
-            onChange={handleChange}
-            className="flex-1 sm:flex-none px-3 h-10 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-tawny-port outline-none bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 text-sm min-w-[110px]"
-          >
-            <option value="">All Statuses</option>
-            <option value="todo">To Do</option>
-            <option value="in_progress">In Progress</option>
-            <option value="blocked">Blocked</option>
-            <option value="done">Done</option>
-          </select>
+        <select
+          name="type"
+          value={filters.type}
+          onChange={handleChange}
+          className="w-full px-3 h-10 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-tawny-port outline-none bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-slate-100 text-sm"
+        >
+          <option value="">All Types</option>
+          <option value="task">Task</option>
+          <option value="bug">Bug</option>
+          <option value="issue">Issue</option>
+        </select>
+        
+        <select
+          name="status"
+          value={filters.status}
+          onChange={handleChange}
+          className="w-full px-3 h-10 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-tawny-port outline-none bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-slate-100 text-sm"
+        >
+          <option value="">All Statuses</option>
+          <option value="todo">To Do</option>
+          <option value="in_progress">In Progress</option>
+          <option value="blocked">Blocked</option>
+          <option value="done">Done</option>
+        </select>
 
-          <select
-            name="priority"
-            value={filters.priority}
-            onChange={handleChange}
-            className="flex-1 sm:flex-none px-3 h-10 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-tawny-port outline-none bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 text-sm min-w-[110px]"
-          >
-            <option value="">All Priorities</option>
-            <option value="low">Low</option>
-            <option value="medium">Medium</option>
-            <option value="high">High</option>
-            <option value="critical">Critical</option>
-          </select>
+        <select
+          name="priority"
+          value={filters.priority}
+          onChange={handleChange}
+          className="w-full px-3 h-10 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-tawny-port outline-none bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-slate-100 text-sm"
+        >
+          <option value="">All Priorities</option>
+          <option value="low">Low</option>
+          <option value="medium">Medium</option>
+          <option value="high">High</option>
+          <option value="critical">Critical</option>
+        </select>
 
-          <button
-            onClick={onClearFilters}
-            className="flex items-center gap-1 text-sm text-slate-500 dark:text-slate-400 hover:text-tawny-port ml-2 transition-colors px-2 py-1 shrink-0 bg-transparent border-none"
-          >
-            <X size={14} />
-            <span className="shrink-0">Clear</span>
-          </button>
-        </div>
+        {/* Clear Button */}
+        <button
+          onClick={onClearFilters}
+          className="flex items-center justify-center gap-1 text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-tawny-port dark:hover:text-tawny-port h-10 px-4 w-full bg-slate-100 dark:bg-slate-800 rounded-lg transition-colors border border-transparent hover:bg-slate-200 dark:hover:bg-slate-700"
+        >
+          <X size={16} />
+          <span>Clear</span>
+        </button>
       </div>
 
-      <div className="flex flex-col lg:flex-row flex-wrap gap-4 items-start lg:items-center">
-        <div className="flex flex-wrap items-center gap-6 shrink-0">
-          <div className="flex items-center gap-3">
-            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider shrink-0">Assignee:</span>
-            <select
-              name="assignee"
-              value={filters.assignee}
-              onChange={handleChange}
-              className="w-full sm:w-auto px-3 h-9 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-tawny-port outline-none text-sm bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100"
-            >
-              <option value="">All Assignees</option>
-              {users.map(u => (
-                <option key={u.uid} value={u.displayName}>{u.displayName}</option>
-              ))}
-            </select>
-          </div>
-          <div className="flex items-center gap-3">
-            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider shrink-0">Reporter:</span>
-            <select
-              name="reporter"
-              value={filters.reporter}
-              onChange={handleChange}
-              className="w-full sm:w-auto px-3 h-9 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-tawny-port outline-none text-sm bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100"
-            >
-              <option value="">All Reporters</option>
-              {users.map(u => (
-                <option key={u.uid} value={u.displayName}>{u.displayName}</option>
-              ))}
-            </select>
-          </div>
+      {/* Bottom Row: Additional Filters */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 w-full border-t border-slate-100 dark:border-slate-700 pt-4">
+        <div className="flex items-center gap-3 w-full">
+          <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider w-[65px] shrink-0">Assignee</span>
+          <select
+            name="assignee"
+            value={filters.assignee}
+            onChange={handleChange}
+            className="w-full px-3 h-9 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-tawny-port outline-none text-sm bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-slate-100"
+          >
+            <option value="">All Assignees</option>
+            {users.map(u => (
+              <option key={u.uid} value={u.displayName}>{u.displayName}</option>
+            ))}
+          </select>
+        </div>
+        
+        <div className="flex items-center gap-3 w-full">
+          <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider w-[65px] shrink-0">Reporter</span>
+          <select
+            name="reporter"
+            value={filters.reporter}
+            onChange={handleChange}
+            className="w-full px-3 h-9 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-tawny-port outline-none text-sm bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-slate-100"
+          >
+            <option value="">All Reporters</option>
+            {users.map(u => (
+              <option key={u.uid} value={u.displayName}>{u.displayName}</option>
+            ))}
+          </select>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 lg:ml-auto shrink-0">
-          <Calendar size={16} className="text-slate-400 dark:text-slate-500 hidden sm:block" />
+        <div className="md:col-span-2 flex items-center justify-start lg:justify-end gap-2 w-full">
+          <Calendar size={16} className="text-slate-400 dark:text-slate-500 hidden sm:block shrink-0" />
           <input
             type="date"
             name="startDate"
             value={filters.startDate}
             onChange={handleChange}
-            className="flex-1 sm:flex-none px-2 h-9 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-tawny-port outline-none text-sm min-w-[120px] bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100"
+            className="flex-1 sm:flex-none px-2 h-9 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-tawny-port outline-none text-sm w-full max-w-[150px] bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-slate-100"
           />
           <span className="text-slate-400 dark:text-slate-500 text-sm shrink-0">to</span>
           <input
@@ -141,7 +142,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({ filters, onFilterChange, o
             name="endDate"
             value={filters.endDate}
             onChange={handleChange}
-            className="flex-1 sm:flex-none px-2 h-9 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-tawny-port outline-none text-sm min-w-[120px] bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100"
+            className="flex-1 sm:flex-none px-2 h-9 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-tawny-port outline-none text-sm w-full max-w-[150px] bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-slate-100"
           />
         </div>
       </div>
