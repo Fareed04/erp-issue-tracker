@@ -84,7 +84,7 @@ function IssueCard({ issue, onClick, isOverlay }: { issue: Issue; onClick?: () =
   );
 }
 
-function DraggableIssue({ issue, onEditIssue }: { issue: Issue, onEditIssue: (i: Issue) => void }) {
+const DraggableIssue: React.FC<{ issue: Issue, onEditIssue: (i: Issue) => void }> = ({ issue, onEditIssue }) => {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: issue.id,
     data: issue,
@@ -315,7 +315,7 @@ export const Board: React.FC<BoardProps> = ({ issues, onUpdateStatus, onUpdateIs
       </div>
 
       {createPortal(
-        <DragOverlay dropAnimation={defaultDropAnimationSideEffects({ sideEffects: ['styles'] })}>
+        <DragOverlay>
           {activeIssue ? <IssueCard issue={activeIssue} isOverlay={true} /> : null}
         </DragOverlay>,
         document.body
