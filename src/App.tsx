@@ -49,6 +49,34 @@ export default function App() {
   const [toasts, setToasts] = useState<{id: string, message: string, type: 'success'|'error'|'info'|'warning'}[]>([]);
 
   useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't trigger if user is typing in an input
+      if (
+        e.target instanceof HTMLInputElement ||
+        e.target instanceof HTMLTextAreaElement ||
+        (e.target as HTMLElement).isContentEditable
+      ) {
+        return;
+      }
+
+      if (e.key === 'n') {
+        e.preventDefault();
+        setEditingIssue(null);
+        setIsModalOpen(true);
+      } else if (e.key === '/') {
+        e.preventDefault();
+        const searchInput = document.getElementById('search-issues-input');
+        if (searchInput) {
+          searchInput.focus();
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  useEffect(() => {
     if (user) {
       api.getUserProfile(user.uid).then(profile => {
         setUserProfile(profile);

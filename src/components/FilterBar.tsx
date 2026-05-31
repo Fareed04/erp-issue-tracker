@@ -38,6 +38,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({ filters, onFilterChange, o
         <div className="md:col-span-3 lg:col-span-2 xl:col-span-2 relative w-full">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" size={18} />
           <input
+            id="search-issues-input"
             type="text"
             name="search"
             value={filters.search}
