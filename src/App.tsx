@@ -9,7 +9,7 @@ import { Dashboard } from './components/Dashboard';
 import { Board } from './components/Board';
 import { IssueList } from './components/IssueList';
 import { IssueModal } from './components/IssueModal';
-import { Issue, CreateIssuePayload, IssueStatus, FilterOptions, BulkUpdatePayload } from './types';
+import { Issue, CreateIssuePayload, IssueStatus, FilterOptions, BulkUpdatePayload, IssueType } from './types';
 import * as api from './services/api';
 import { Plus, Menu, Download } from 'lucide-react';
 import * as XLSX from 'xlsx';
@@ -47,6 +47,7 @@ export default function App() {
   const [editingIssue, setEditingIssue] = useState<Issue | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [toasts, setToasts] = useState<{id: string, message: string, type: 'success'|'error'|'info'|'warning'}[]>([]);
+  const [defaultNewIssueType, setDefaultNewIssueType] = useState<IssueType | undefined>(undefined);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -323,8 +324,9 @@ export default function App() {
     }
   };
 
-  const openNewIssueModal = () => {
+  const openNewIssueModal = (defaultType?: IssueType) => {
     setEditingIssue(null);
+    setDefaultNewIssueType(defaultType);
     setIsModalOpen(true);
     if (userProfile && !userProfile.tutorialCompleted && userProfile.tutorialStep === 1) {
       handleTutorialNext();
@@ -466,12 +468,14 @@ export default function App() {
         onClose={() => {
           setIsModalOpen(false);
           setEditingIssue(null);
+          setDefaultNewIssueType(undefined);
         }}
         onSave={handleSaveIssue}
         onDelete={handleDeleteIssue}
         issue={editingIssue}
         userProfile={userProfile}
         allIssues={issues}
+        defaultType={defaultNewIssueType}
       />
 
       {userProfile && !userProfile.tutorialCompleted && (

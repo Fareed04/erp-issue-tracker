@@ -14,9 +14,10 @@ interface IssueModalProps {
   issue?: Issue | null;
   userProfile?: UserProfile | null;
   allIssues?: Issue[];
+  defaultType?: IssueType;
 }
 
-export const IssueModal: React.FC<IssueModalProps> = ({ isOpen, onClose, onSave, onDelete, issue, userProfile, allIssues = [] }) => {
+export const IssueModal: React.FC<IssueModalProps> = ({ isOpen, onClose, onSave, onDelete, issue, userProfile, allIssues = [], defaultType }) => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [activities, setActivities] = useState<ActivityLog[]>([]);
@@ -88,7 +89,7 @@ export const IssueModal: React.FC<IssueModalProps> = ({ isOpen, onClose, onSave,
       setFormData({
         title: '',
         description: '',
-        type: 'task',
+        type: defaultType || 'task',
         status: 'todo',
         priority: 'medium',
         assigneeUid: '',
@@ -102,7 +103,7 @@ export const IssueModal: React.FC<IssueModalProps> = ({ isOpen, onClose, onSave,
       setIsEditing(true);
     }
     setShowDeleteConfirm(false);
-  }, [issue, isOpen]);
+  }, [issue, isOpen, defaultType]);
 
   if (!isOpen) return null;
 
