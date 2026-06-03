@@ -1,0 +1,35 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --color-tawny-port: #74253A;
+  --color-peru-tan: #7B5203;
+  --color-erp-black: #000000;
+}
+
+@layer base {
+  :root {
+    --color-bg: #ffffff;
+    --color-border: #e2e8f0;
+    --color-text: #0f172a;
+    --color-chart-1: var(--color-tawny-port);
+    --color-chart-2: var(--color-peru-tan);
+    --color-chart-3: var(--color-erp-black);
+    --color-chart-4: #10b981;
+  }
+  
+  .dark {
+    --color-bg: #1e293b;
+    --color-border: #334155;
+    --color-text: #f1f5f9;
+    --color-chart-1: #B0425D; /* Lighter variant of tawny port for dark mode */
+    --color-chart-2: #C89123; /* Lighter variant of peru tan for dark mode */
+    --color-chart-3: #94A3B8; /* Slate 400 instead of black for dark mode */
+    --color-chart-4: #34D399;
+  }
+
+  body {
+    @apply bg-slate-50 text-erp-black dark:bg-slate-900 dark:text-slate-100;
+  }
+}

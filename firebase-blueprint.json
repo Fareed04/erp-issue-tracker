@@ -1,0 +1,43 @@
+{
+  "entities": {
+    "User": {
+      "title": "User Profile",
+      "description": "User profile information including display name and avatar.",
+      "type": "object",
+      "properties": {
+        "displayName": { "type": "string", "description": "The user's full name." },
+        "photoURL": { "type": "string", "description": "URL to the user's profile picture." },
+        "email": { "type": "string", "description": "The user's email address." }
+      },
+      "required": ["displayName", "email"]
+    },
+    "Issue": {
+      "title": "Issue",
+      "description": "A task, bug, or issue in the ERP system.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string", "description": "Short summary of the issue." },
+        "description": { "type": "string", "description": "Detailed description." },
+        "type": { "type": "string", "enum": ["task", "bug", "issue"] },
+        "status": { "type": "string", "enum": ["todo", "in_progress", "blocked", "done"] },
+        "priority": { "type": "string", "enum": ["low", "medium", "high", "critical"] },
+        "assigneeUid": { "type": "string", "description": "UID of the assigned user." },
+        "reporterUid": { "type": "string", "description": "UID of the user who reported the issue." },
+        "delay_cause": { "type": "string", "description": "Reason for delay if blocked." },
+        "created_at": { "type": "string", "format": "date-time" },
+        "updated_at": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "type", "status", "priority", "reporterUid", "created_at", "updated_at"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "Collection of user profiles."
+    },
+    "/issues/{issueId}": {
+      "schema": "Issue",
+      "description": "Collection of system issues."
+    }
+  }
+}
