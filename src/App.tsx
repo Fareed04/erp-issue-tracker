@@ -17,6 +17,7 @@ import { FilterBar } from './components/FilterBar';
 import { NotificationCenter } from './components/NotificationCenter';
 import { ThemeToggle } from './components/ThemeToggle';
 import { UsersManagement } from './components/UsersManagement';
+import { SkeletonLoader } from './components/SkeletonLoader';
 
 import { auth } from './firebase';
 import { useAuthState } from 'react-firebase-hooks/auth';
@@ -424,8 +425,8 @@ export default function App() {
 
         <div className="flex-1 overflow-y-auto">
           {isLoading ? (
-            <div className="h-full flex items-center justify-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-tawny-port"></div>
+            <div className="max-w-[1600px] mx-auto">
+              <SkeletonLoader view={currentView} />
             </div>
           ) : (
             <div className="max-w-[1600px] mx-auto">
