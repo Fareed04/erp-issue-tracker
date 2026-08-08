@@ -437,6 +437,58 @@ export default function App() {
                     onFilterChange={setFilters}
                     onClearFilters={() => setFilters(initialFilters)}
                   />
+                  <div className="flex flex-wrap gap-2 mt-4">
+                    <button
+                      onClick={() => setFilters(prev => ({ ...prev, assignee: prev.assignee === (user?.displayName || '') ? '' : (user?.displayName || '') }))}
+                      className={`px-3 py-1.5 text-sm rounded-full border transition-colors ${
+                        filters.assignee === user?.displayName && user?.displayName 
+                          ? 'bg-indigo-100 border-indigo-300 text-indigo-800 dark:bg-indigo-900/50 dark:border-indigo-700 dark:text-indigo-300' 
+                          : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:border-slate-700 dark:text-slate-300'
+                      }`}
+                    >
+                      My Tasks
+                    </button>
+                    <button
+                      onClick={() => setFilters(prev => ({ ...prev, priority: prev.priority === 'high' ? '' : 'high' }))}
+                      className={`px-3 py-1.5 text-sm rounded-full border transition-colors ${
+                        filters.priority === 'high'
+                          ? 'bg-red-100 border-red-300 text-red-800 dark:bg-red-900/50 dark:border-red-700 dark:text-red-300'
+                          : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:border-slate-700 dark:text-slate-300'
+                      }`}
+                    >
+                      High Priority
+                    </button>
+                    <button
+                      onClick={() => setFilters(prev => ({ ...prev, type: 'bug' === prev.type ? '' : 'bug' }))}
+                      className={`px-3 py-1.5 text-sm rounded-full border transition-colors ${
+                        filters.type === 'bug'
+                          ? 'bg-orange-100 border-orange-300 text-orange-800 dark:bg-orange-900/50 dark:border-orange-700 dark:text-orange-300'
+                          : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:border-slate-700 dark:text-slate-300'
+                      }`}
+                    >
+                      Bugs
+                    </button>
+                    <button
+                      onClick={() => setFilters(prev => ({ ...prev, status: prev.status === 'in_progress' ? '' : 'in_progress' }))}
+                      className={`px-3 py-1.5 text-sm rounded-full border transition-colors ${
+                        filters.status === 'in_progress'
+                          ? 'bg-blue-100 border-blue-300 text-blue-800 dark:bg-blue-900/50 dark:border-blue-700 dark:text-blue-300'
+                          : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:border-slate-700 dark:text-slate-300'
+                      }`}
+                    >
+                      In Progress
+                    </button>
+                    <button
+                      onClick={() => setFilters(prev => ({ ...prev, status: prev.status === 'done' ? '' : 'done' }))}
+                      className={`px-3 py-1.5 text-sm rounded-full border transition-colors ${
+                        filters.status === 'done'
+                          ? 'bg-emerald-100 border-emerald-300 text-emerald-800 dark:bg-emerald-900/50 dark:border-emerald-700 dark:text-emerald-300'
+                          : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:border-slate-700 dark:text-slate-300'
+                      }`}
+                    >
+                      Completed
+                    </button>
+                  </div>
                 </div>
               )}
               
