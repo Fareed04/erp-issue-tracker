@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { Issue } from '../types';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis } from 'recharts';
 import { AlertTriangle, CheckCircle2, Clock, ListTodo } from 'lucide-react';
 
 interface DashboardProps {
@@ -43,6 +43,20 @@ export const Dashboard: React.FC<DashboardProps> = ({ issues }) => {
     ];
   }, [issues]);
 
+  const workloadData = useMemo(() => {
+    const counts = issues.reduce((acc, issue) => {
+      if (issue.status !== 'done' && issue.assignee) {
+        acc[issue.assignee] = (acc[issue.assignee] || 0) + 1;
+      }
+      return acc;
+    }, {} as Record<string, number>);
+
+    return Object.keys(counts).map(name => ({
+      name,
+      activeTasks: counts[name]
+    })).sort((a, b) => b.activeTasks - a.activeTasks);
+  }, [issues]);
+
   return (
     <div className="p-4 lg:p-8 space-y-8">
       <div>
@@ -57,7 +71,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ issues }) => {
         <StatCard title="Completed" value={stats.done} icon={CheckCircle2} color="bg-emerald-500" />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
         <div className="bg-white dark:bg-slate-800 p-4 sm:p-6 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 min-w-0">
           <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-100 mb-4">Items by Status</h3>
           <div className="h-72">
@@ -105,6 +119,27 @@ export const Dashboard: React.FC<DashboardProps> = ({ issues }) => {
                 <span className="text-sm text-slate-600 dark:text-slate-300">{entry.name}</span>
               </div>
             ))}
+          </div>
+        </div>
+
+        <div className="bg-white dark:bg-slate-800 p-4 sm:p-6 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 min-w-0 lg:col-span-2 xl:col-span-1">
+          <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-100 mb-4">Workload Distribution</h3>
+          <div className="h-72">
+            <ResponsiveContainer width="100%" height="100%">
+              {workloadData.length > 0 ? (
+                <RadarChart cx="50%" cy="50%" outerRadius="70%" data={workloadData}>
+                  <PolarGrid stroke="var(--color-border)" />
+                  <PolarAngleAxis dataKey="name" tick={{ fill: 'currentColor', fontSize: 11 }} className="text-slate-500 dark:text-slate-400" />
+                  <PolarRadiusAxis angle={30} domain={[0, 'auto']} tick={{ fill: 'currentColor', fontSize: 11 }} className="text-slate-500 dark:text-slate-400" />
+                  <Radar name="Active Tasks" dataKey="activeTasks" stroke="var(--color-chart-3)" fill="var(--color-chart-3)" fillOpacity={0.6} />
+                  <Tooltip contentStyle={{ backgroundColor: 'var(--color-bg)', borderColor: 'var(--color-border)', color: 'var(--color-text)' }} />
+                </RadarChart>
+              ) : (
+                <div className="h-full flex items-center justify-center text-slate-500 dark:text-slate-400 text-sm">
+                  No active tasks assigned
+                </div>
+              )}
+            </ResponsiveContainer>
           </div>
         </div>
       </div>
