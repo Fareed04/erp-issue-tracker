@@ -125,8 +125,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ issues }) => {
         <div className="bg-white dark:bg-slate-800 p-4 sm:p-6 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 min-w-0 lg:col-span-2 xl:col-span-1">
           <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-100 mb-4">Workload Distribution</h3>
           <div className="h-72">
-            <ResponsiveContainer width="100%" height="100%">
-              {workloadData.length > 0 ? (
+            {workloadData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
                 <RadarChart cx="50%" cy="50%" outerRadius="70%" data={workloadData}>
                   <PolarGrid stroke="var(--color-border)" />
                   <PolarAngleAxis dataKey="name" tick={{ fill: 'currentColor', fontSize: 11 }} className="text-slate-500 dark:text-slate-400" />
@@ -134,12 +134,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ issues }) => {
                   <Radar name="Active Tasks" dataKey="activeTasks" stroke="var(--color-chart-3)" fill="var(--color-chart-3)" fillOpacity={0.6} />
                   <Tooltip contentStyle={{ backgroundColor: 'var(--color-bg)', borderColor: 'var(--color-border)', color: 'var(--color-text)' }} />
                 </RadarChart>
-              ) : (
-                <div className="h-full flex items-center justify-center text-slate-500 dark:text-slate-400 text-sm">
-                  No active tasks assigned
-                </div>
-              )}
-            </ResponsiveContainer>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-full flex items-center justify-center text-slate-500 dark:text-slate-400 text-sm">
+                No active tasks assigned
+              </div>
+            )}
           </div>
         </div>
       </div>
