@@ -11,13 +11,14 @@ import { IssueList } from './components/IssueList';
 import { IssueModal } from './components/IssueModal';
 import { Issue, CreateIssuePayload, IssueStatus, FilterOptions, BulkUpdatePayload, IssueType } from './types';
 import * as api from './services/api';
-import { Plus, Menu, Download } from 'lucide-react';
+import { Plus, Menu, Download, Keyboard } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { FilterBar } from './components/FilterBar';
 import { NotificationCenter } from './components/NotificationCenter';
 import { ThemeToggle } from './components/ThemeToggle';
 import { UsersManagement } from './components/UsersManagement';
 import { SkeletonLoader } from './components/SkeletonLoader';
+import { KeyboardShortcutsModal } from './components/KeyboardShortcutsModal';
 
 import { auth } from './firebase';
 import { useAuthState } from 'react-firebase-hooks/auth';
@@ -44,6 +45,7 @@ export default function App() {
   const [issues, setIssues] = useState<Issue[]>([]);
   const [filters, setFilters] = useState<FilterOptions>(initialFilters);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isKeyboardModalOpen, setIsKeyboardModalOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [editingIssue, setEditingIssue] = useState<Issue | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -71,6 +73,9 @@ export default function App() {
         if (searchInput) {
           searchInput.focus();
         }
+      } else if (e.key === '?') {
+        e.preventDefault();
+        setIsKeyboardModalOpen(true);
       }
     };
 
@@ -397,6 +402,14 @@ export default function App() {
           <div className="flex items-center gap-1.5 sm:gap-2 lg:gap-4 flex-shrink-0">
             <Auth />
             <div className="h-8 w-px bg-slate-200 dark:bg-slate-700 mx-1 hidden sm:block"></div>
+            <button
+              onClick={() => setIsKeyboardModalOpen(true)}
+              className="p-2 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-slate-400 dark:focus:ring-slate-600"
+              title="Keyboard Shortcuts (?)"
+              aria-label="Keyboard Shortcuts"
+            >
+              <Keyboard size={20} />
+            </button>
             <ThemeToggle />
             <NotificationCenter 
               userId={user?.uid} 
@@ -529,6 +542,11 @@ export default function App() {
         userProfile={userProfile}
         allIssues={issues}
         defaultType={defaultNewIssueType}
+      />
+
+      <KeyboardShortcutsModal 
+        isOpen={isKeyboardModalOpen} 
+        onClose={() => setIsKeyboardModalOpen(false)} 
       />
 
       {userProfile && !userProfile.tutorialCompleted && (
