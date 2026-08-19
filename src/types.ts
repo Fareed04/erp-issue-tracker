@@ -29,6 +29,7 @@ export interface Issue {
   dueDate?: string | null;
   deadlineNotified?: boolean;
   links?: IssueLink[];
+  order?: number;
   created_at: string;
   updated_at: string;
 }
