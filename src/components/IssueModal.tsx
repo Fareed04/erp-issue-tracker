@@ -126,6 +126,40 @@ export const IssueModal: React.FC<IssueModalProps> = ({ isOpen, onClose, onSave,
     }
   };
 
+  const suggestedAssignees = React.useMemo(() => {
+    if (!users.length) return [];
+    
+    // Count active tasks for each user
+    const activeTasksCount: Record<string, number> = {};
+    users.forEach(u => activeTasksCount[u.uid] = 0);
+    allIssues.forEach(issue => {
+      if (issue.status !== 'done' && issue.assigneeUid) {
+        activeTasksCount[issue.assigneeUid] = (activeTasksCount[issue.assigneeUid] || 0) + 1;
+      }
+    });
+
+    // Score users
+    const scoredUsers = users.map(user => {
+      let score = 0;
+      
+      // Role-based matching
+      if (formData.type === 'bug' && user.role === 'Developer') score += 10;
+      if (formData.type === 'task' && user.role !== 'Admin') score += 5;
+      
+      // Load balancing: favor users with fewer active tasks
+      const load = activeTasksCount[user.uid] || 0;
+      score -= load * 2; // Subtract points for high workload
+      
+      return { user, score, load };
+    });
+
+    // Sort by score descending
+    scoredUsers.sort((a, b) => b.score - a.score);
+    
+    // Return top 3
+    return scoredUsers.slice(0, 3).map(s => s.user);
+  }, [users, allIssues, formData.type]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const payload = {
@@ -452,6 +486,22 @@ export const IssueModal: React.FC<IssueModalProps> = ({ isOpen, onClose, onSave,
                       <option key={u.uid} value={u.uid}>{u.displayName}</option>
                     ))}
                   </select>
+                  {suggestedAssignees.length > 0 && !formData.assigneeUid && (
+                    <div className="mt-2 flex flex-wrap gap-2 items-center">
+                      <span className="text-xs text-slate-500 dark:text-slate-400">Suggested:</span>
+                      {suggestedAssignees.map(user => (
+                        <button
+                          key={user.uid}
+                          type="button"
+                          onClick={() => handleAssigneeChange(user.uid)}
+                          className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-xs font-medium text-slate-700 dark:text-slate-300 transition-colors"
+                        >
+                          <Avatar src={user.photoURL || undefined} name={user.displayName} size="sm" className="w-4 h-4 text-[8px]" />
+                          {user.displayName}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 <div>
