@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Issue, CreateIssuePayload, IssueType, IssueStatus, IssuePriority, UserProfile, ActivityLog } from '../types';
-import { X, Save, Trash2, User, Clock, Edit3 } from 'lucide-react';
+import { X, Save, Trash2, User, Clock, Edit3, Mic, MicOff } from 'lucide-react';
 import * as api from '../services/api';
 import { Avatar } from './Avatar';
 import { formatDistanceToNow } from 'date-fns';
@@ -25,6 +25,8 @@ export const IssueModal: React.FC<IssueModalProps> = ({ isOpen, onClose, onSave,
   const [newComment, setNewComment] = useState('');
   const [activeTab, setActiveTab] = useState<'details' | 'activity' | 'comments'>('details');
   const [isEditing, setIsEditing] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+  const recognitionRef = React.useRef<any>(null);
   const [formData, setFormData] = useState<any>({
     title: '',
     description: '',
@@ -49,7 +51,66 @@ export const IssueModal: React.FC<IssueModalProps> = ({ isOpen, onClose, onSave,
       }
     };
     if (isOpen) loadUsers();
+    else {
+      if (recognitionRef.current && isListening) {
+        recognitionRef.current.stop();
+        setIsListening(false);
+      }
+    }
   }, [isOpen]);
+
+  const toggleListening = () => {
+    if (isListening) {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+      setIsListening(false);
+      return;
+    }
+
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert('Speech recognition is not supported in this browser.');
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    
+    recognition.onresult = (event: any) => {
+      let finalTranscript = '';
+      for (let i = event.resultIndex; i < event.results.length; ++i) {
+        if (event.results[i].isFinal) {
+          finalTranscript += event.results[i][0].transcript;
+        }
+      }
+      if (finalTranscript) {
+        setFormData((prev: any) => ({ 
+          ...prev, 
+          description: prev.description ? prev.description + ' ' + finalTranscript : finalTranscript 
+        }));
+      }
+    };
+
+    recognition.onerror = (event: any) => {
+      console.error('Speech recognition error', event.error);
+      setIsListening(false);
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+    };
+
+    try {
+      recognition.start();
+      recognitionRef.current = recognition;
+      setIsListening(true);
+    } catch (err) {
+      console.error('Failed to start speech recognition', err);
+      setIsListening(false);
+    }
+  };
 
   useEffect(() => {
     if (isOpen && issue) {
@@ -105,6 +166,40 @@ export const IssueModal: React.FC<IssueModalProps> = ({ isOpen, onClose, onSave,
     setShowDeleteConfirm(false);
   }, [issue, isOpen, defaultType]);
 
+  const suggestedAssignees = React.useMemo(() => {
+    if (!users.length) return [];
+    
+    // Count active tasks for each user
+    const activeTasksCount: Record<string, number> = {};
+    users.forEach(u => activeTasksCount[u.uid] = 0);
+    allIssues.forEach(issueItem => {
+      if (issueItem.status !== 'done' && issueItem.assigneeUid) {
+        activeTasksCount[issueItem.assigneeUid] = (activeTasksCount[issueItem.assigneeUid] || 0) + 1;
+      }
+    });
+
+    // Score users
+    const scoredUsers = users.map(u => {
+      let score = 0;
+      
+      // Role-based matching
+      if (formData.type === 'bug' && u.role === 'Developer') score += 10;
+      if (formData.type === 'task' && u.role !== 'Admin') score += 5;
+      
+      // Load balancing: favor users with fewer active tasks
+      const load = activeTasksCount[u.uid] || 0;
+      score -= load * 2; // Subtract points for high workload
+      
+      return { user: u, score, load };
+    });
+
+    // Sort by score descending
+    scoredUsers.sort((a, b) => b.score - a.score);
+    
+    // Return top 3
+    return scoredUsers.slice(0, 3).map(s => s.user);
+  }, [users, allIssues, formData.type]);
+
   if (!isOpen) return null;
 
   const handleAssigneeChange = (uid: string) => {
@@ -125,40 +220,6 @@ export const IssueModal: React.FC<IssueModalProps> = ({ isOpen, onClose, onSave,
       });
     }
   };
-
-  const suggestedAssignees = React.useMemo(() => {
-    if (!users.length) return [];
-    
-    // Count active tasks for each user
-    const activeTasksCount: Record<string, number> = {};
-    users.forEach(u => activeTasksCount[u.uid] = 0);
-    allIssues.forEach(issue => {
-      if (issue.status !== 'done' && issue.assigneeUid) {
-        activeTasksCount[issue.assigneeUid] = (activeTasksCount[issue.assigneeUid] || 0) + 1;
-      }
-    });
-
-    // Score users
-    const scoredUsers = users.map(user => {
-      let score = 0;
-      
-      // Role-based matching
-      if (formData.type === 'bug' && user.role === 'Developer') score += 10;
-      if (formData.type === 'task' && user.role !== 'Admin') score += 5;
-      
-      // Load balancing: favor users with fewer active tasks
-      const load = activeTasksCount[user.uid] || 0;
-      score -= load * 2; // Subtract points for high workload
-      
-      return { user, score, load };
-    });
-
-    // Sort by score descending
-    scoredUsers.sort((a, b) => b.score - a.score);
-    
-    // Return top 3
-    return scoredUsers.slice(0, 3).map(s => s.user);
-  }, [users, allIssues, formData.type]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -418,7 +479,29 @@ export const IssueModal: React.FC<IssueModalProps> = ({ isOpen, onClose, onSave,
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Description</label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Description</label>
+                  <button
+                    type="button"
+                    onClick={toggleListening}
+                    className={`flex items-center gap-1.5 px-2 py-1 text-xs font-medium rounded-md transition-colors ${
+                      isListening
+                        ? 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400'
+                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700'
+                    }`}
+                    title={isListening ? "Stop Dictation" : "Start Voice Dictation"}
+                  >
+                    {isListening ? (
+                      <>
+                        <MicOff size={14} className="animate-pulse" /> Stop
+                      </>
+                    ) : (
+                      <>
+                        <Mic size={14} /> Dictate
+                      </>
+                    )}
+                  </button>
+                </div>
                 <textarea
                   rows={4}
                   value={formData.description}
@@ -489,15 +572,15 @@ export const IssueModal: React.FC<IssueModalProps> = ({ isOpen, onClose, onSave,
                   {suggestedAssignees.length > 0 && !formData.assigneeUid && (
                     <div className="mt-2 flex flex-wrap gap-2 items-center">
                       <span className="text-xs text-slate-500 dark:text-slate-400">Suggested:</span>
-                      {suggestedAssignees.map(user => (
+                      {suggestedAssignees.map(u => (
                         <button
-                          key={user.uid}
+                          key={u.uid}
                           type="button"
-                          onClick={() => handleAssigneeChange(user.uid)}
+                          onClick={() => handleAssigneeChange(u.uid)}
                           className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-xs font-medium text-slate-700 dark:text-slate-300 transition-colors"
                         >
-                          <Avatar src={user.photoURL || undefined} name={user.displayName} size="sm" className="w-4 h-4 text-[8px]" />
-                          {user.displayName}
+                          <Avatar src={u.photoURL || undefined} name={u.displayName} size="sm" className="w-4 h-4 text-[8px]" />
+                          {u.displayName}
                         </button>
                       ))}
                     </div>

@@ -1,5 +1,10 @@
 {
   "name": "ERP Tracker",
   "description": "A platform to track tasks, bugs, and issues as well as delays and causes within the company in-house ERP system.",
-  "requestFramePermissions": []
+  "requestFramePermissions": [
+    "microphone"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
 }
