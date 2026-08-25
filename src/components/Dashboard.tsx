@@ -43,10 +43,22 @@ export const Dashboard: React.FC<DashboardProps> = ({ issues }) => {
     ];
   }, [issues]);
 
+  const priorityData = useMemo(() => {
+    const counts = issues.reduce((acc, issue) => {
+      acc[issue.priority] = (acc[issue.priority] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+    return [
+      { name: 'High', value: counts['high'] || 0 },
+      { name: 'Medium', value: counts['medium'] || 0 },
+      { name: 'Low', value: counts['low'] || 0 },
+    ];
+  }, [issues]);
+
   const workloadData = useMemo(() => {
     const counts = issues.reduce((acc, issue) => {
-      if (issue.status !== 'done' && issue.assignee) {
-        acc[issue.assignee] = (acc[issue.assignee] || 0) + 1;
+      if (issue.status !== 'done' && issue.assigneeName) {
+        acc[issue.assigneeName] = (acc[issue.assigneeName] || 0) + 1;
       }
       return acc;
     }, {} as Record<string, number>);
@@ -71,7 +83,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ issues }) => {
         <StatCard title="Completed" value={stats.done} icon={CheckCircle2} color="bg-emerald-500" />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white dark:bg-slate-800 p-4 sm:p-6 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 min-w-0">
           <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-100 mb-4">Items by Status</h3>
           <div className="h-72">
@@ -80,13 +92,15 @@ export const Dashboard: React.FC<DashboardProps> = ({ issues }) => {
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--color-border)" />
                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fontSize: 12, fill: 'currentColor'}} className="text-slate-500 dark:text-slate-400" />
                 <YAxis axisLine={false} tickLine={false} tick={{fontSize: 12, fill: 'currentColor'}} width={30} className="text-slate-500 dark:text-slate-400" />
-                <Tooltip cursor={{fill: 'var(--color-border)'}} contentStyle={{ backgroundColor: 'var(--color-bg)', borderColor: 'var(--color-border)', color: 'var(--color-text)' }} />
-                <Bar dataKey="value" fill="var(--color-chart-1)" radius={[4, 4, 0, 0]} />
+                <Tooltip 
+                  cursor={{fill: 'var(--color-border)', opacity: 0.4}} 
+                  contentStyle={{ backgroundColor: 'var(--color-bg)', borderColor: 'var(--color-border)', color: 'var(--color-text)', borderRadius: '8px' }} 
+                />
+                <Bar dataKey="value" fill="var(--color-chart-1)" radius={[4, 4, 0, 0]} name="Issues" />
               </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
-
 
         <div className="bg-white dark:bg-slate-800 p-4 sm:p-6 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 min-w-0">
           <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-100 mb-4">Items by Type</h3>
@@ -108,7 +122,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ issues }) => {
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
-                <Tooltip contentStyle={{ backgroundColor: 'var(--color-bg)', borderColor: 'var(--color-border)', color: 'var(--color-text)' }} />
+                <Tooltip contentStyle={{ backgroundColor: 'var(--color-bg)', borderColor: 'var(--color-border)', color: 'var(--color-text)', borderRadius: '8px' }} />
               </PieChart>
             </ResponsiveContainer>
           </div>
@@ -116,13 +130,31 @@ export const Dashboard: React.FC<DashboardProps> = ({ issues }) => {
             {typeData.map((entry, index) => (
               <div key={entry.name} className="flex items-center gap-2">
                 <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
-                <span className="text-sm text-slate-600 dark:text-slate-300">{entry.name}</span>
+                <span className="text-sm text-slate-600 dark:text-slate-300">{entry.name} ({entry.value})</span>
               </div>
             ))}
           </div>
         </div>
 
-        <div className="bg-white dark:bg-slate-800 p-4 sm:p-6 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 min-w-0 lg:col-span-2 xl:col-span-1">
+        <div className="bg-white dark:bg-slate-800 p-4 sm:p-6 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 min-w-0">
+          <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-100 mb-4">Items by Priority</h3>
+          <div className="h-72">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={priorityData} layout="vertical" margin={{ left: 10, right: 10 }}>
+                <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="var(--color-border)" />
+                <XAxis type="number" axisLine={false} tickLine={false} tick={{fontSize: 12, fill: 'currentColor'}} className="text-slate-500 dark:text-slate-400" />
+                <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{fontSize: 12, fill: 'currentColor'}} width={50} className="text-slate-500 dark:text-slate-400" />
+                <Tooltip 
+                  cursor={{fill: 'var(--color-border)', opacity: 0.4}} 
+                  contentStyle={{ backgroundColor: 'var(--color-bg)', borderColor: 'var(--color-border)', color: 'var(--color-text)', borderRadius: '8px' }} 
+                />
+                <Bar dataKey="value" fill="var(--color-chart-2)" radius={[0, 4, 4, 0]} name="Issues" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        <div className="bg-white dark:bg-slate-800 p-4 sm:p-6 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 min-w-0">
           <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-100 mb-4">Workload Distribution</h3>
           <div className="h-72">
             {workloadData.length > 0 ? (
@@ -132,7 +164,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ issues }) => {
                   <PolarAngleAxis dataKey="name" tick={{ fill: 'currentColor', fontSize: 11 }} className="text-slate-500 dark:text-slate-400" />
                   <PolarRadiusAxis angle={30} domain={[0, 'auto']} tick={{ fill: 'currentColor', fontSize: 11 }} className="text-slate-500 dark:text-slate-400" />
                   <Radar name="Active Tasks" dataKey="activeTasks" stroke="var(--color-chart-3)" fill="var(--color-chart-3)" fillOpacity={0.6} />
-                  <Tooltip contentStyle={{ backgroundColor: 'var(--color-bg)', borderColor: 'var(--color-border)', color: 'var(--color-text)' }} />
+                  <Tooltip contentStyle={{ backgroundColor: 'var(--color-bg)', borderColor: 'var(--color-border)', color: 'var(--color-text)', borderRadius: '8px' }} />
                 </RadarChart>
               </ResponsiveContainer>
             ) : (
