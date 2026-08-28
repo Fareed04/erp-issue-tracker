@@ -3,6 +3,7 @@ import { Issue, CreateIssuePayload, IssueType, IssueStatus, IssuePriority, UserP
 import { X, Save, Trash2, User, Clock, Edit3, Mic, MicOff } from 'lucide-react';
 import * as api from '../services/api';
 import { Avatar } from './Avatar';
+import { AudioRecorder } from './AudioRecorder';
 import { formatDistanceToNow } from 'date-fns';
 import { auth } from '../firebase';
 
@@ -338,6 +339,15 @@ export const IssueModal: React.FC<IssueModalProps> = ({ isOpen, onClose, onSave,
                   )}
                 </div>
 
+                {issue.voiceNoteUrl && (
+                  <div>
+                    <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">Voice Note</h3>
+                    <div className="bg-slate-50 dark:bg-slate-900/50 p-3 rounded-lg border border-slate-200 dark:border-slate-700/50 flex items-center">
+                      <audio src={issue.voiceNoteUrl} controls className="h-10 max-w-full" />
+                    </div>
+                  </div>
+                )}
+
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div className="bg-slate-50 dark:bg-slate-900/50 p-3 rounded-lg border border-slate-200 dark:border-slate-700/50">
                     <span className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Type</span>
@@ -508,6 +518,16 @@ export const IssueModal: React.FC<IssueModalProps> = ({ isOpen, onClose, onSave,
                   onChange={e => setFormData({ ...formData, description: e.target.value })}
                   className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-tawny-port focus:border-tawny-port outline-none transition-all resize-none bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100"
                   placeholder="Detailed description, steps to reproduce, etc..."
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Voice Note</label>
+                <AudioRecorder 
+                  issueId={issue?.id}
+                  existingAudioUrl={formData.voiceNoteUrl}
+                  onUploadComplete={(url) => setFormData({ ...formData, voiceNoteUrl: url })}
+                  onRemoveAudio={() => setFormData({ ...formData, voiceNoteUrl: null })}
                 />
               </div>
 

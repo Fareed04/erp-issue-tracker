@@ -30,6 +30,7 @@ export interface Issue {
   deadlineNotified?: boolean;
   links?: IssueLink[];
   order?: number;
+  voiceNoteUrl?: string | null;
   created_at: string;
   updated_at: string;
 }

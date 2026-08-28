@@ -13,7 +13,8 @@ import {
   onSnapshot,
   where
 } from 'firebase/firestore';
-import { db } from '../firebase';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { db, storage } from '../firebase';
 import { Issue, CreateIssuePayload, BulkUpdatePayload, UserProfile, ActivityLog, Comment, AppNotification } from '../types';
 
 const ISSUES_COLLECTION = 'issues';
@@ -340,4 +341,11 @@ export const updateUserProfile = async (profile: UserProfile): Promise<void> => 
 export const getAllUserProfiles = async (): Promise<UserProfile[]> => {
   const snapshot = await getDocs(collection(db, USERS_COLLECTION));
   return snapshot.docs.map(doc => ({ uid: doc.id, ...doc.data() } as UserProfile));
+};
+
+export const uploadVoiceNote = async (audioBlob: Blob, issueId?: string): Promise<string> => {
+  const filename = `voice_notes/${issueId || 'temp'}_${Date.now()}.webm`;
+  const storageRef = ref(storage, filename);
+  await uploadBytes(storageRef, audioBlob);
+  return await getDownloadURL(storageRef);
 };
