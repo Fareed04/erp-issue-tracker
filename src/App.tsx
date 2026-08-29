@@ -257,7 +257,7 @@ export default function App() {
           handleTutorialNext();
         }
       }
-      setIsModalOpen(false);
+      console.log("App.tsx onClose called"); setIsModalOpen(false);
       setEditingIssue(null);
     } catch (error) {
       console.error('Failed to save issue', error);
@@ -268,7 +268,7 @@ export default function App() {
   const handleDeleteIssue = async (id: string) => {
     try {
       await api.deleteIssue(id, user);
-      setIsModalOpen(false);
+      console.log("App.tsx onClose called"); setIsModalOpen(false);
       setEditingIssue(null);
       addNotification('Issue deleted successfully.', 'info');
       
@@ -532,7 +532,7 @@ export default function App() {
       <IssueModal
         isOpen={isModalOpen}
         onClose={() => {
-          setIsModalOpen(false);
+          console.log("App.tsx onClose called"); setIsModalOpen(false);
           setEditingIssue(null);
           setDefaultNewIssueType(undefined);
         }}

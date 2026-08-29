@@ -3,7 +3,13 @@ import {createRoot} from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
 
-// Force reload
+// Suppress known React DevTools cross-origin errors in the iframe sandbox
+window.addEventListener('error', (event) => {
+  if (event.message?.includes('$$typeof') || event.message?.includes('cross-origin')) {
+    event.preventDefault();
+  }
+});
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <App />

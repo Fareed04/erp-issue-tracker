@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Issue, CreateIssuePayload, IssueType, IssueStatus, IssuePriority, UserProfile, ActivityLog } from '../types';
-import { X, Save, Trash2, User, Clock, Edit3, Mic, MicOff } from 'lucide-react';
+import { X, Save, Trash2, User, Clock, Edit3 } from 'lucide-react';
 import * as api from '../services/api';
 import { Avatar } from './Avatar';
-import { AudioRecorder } from './AudioRecorder';
 import { formatDistanceToNow } from 'date-fns';
 import { auth } from '../firebase';
 
@@ -26,8 +25,6 @@ export const IssueModal: React.FC<IssueModalProps> = ({ isOpen, onClose, onSave,
   const [newComment, setNewComment] = useState('');
   const [activeTab, setActiveTab] = useState<'details' | 'activity' | 'comments'>('details');
   const [isEditing, setIsEditing] = useState(false);
-  const [isListening, setIsListening] = useState(false);
-  const recognitionRef = React.useRef<any>(null);
   const [formData, setFormData] = useState<any>({
     title: '',
     description: '',
@@ -52,66 +49,7 @@ export const IssueModal: React.FC<IssueModalProps> = ({ isOpen, onClose, onSave,
       }
     };
     if (isOpen) loadUsers();
-    else {
-      if (recognitionRef.current && isListening) {
-        recognitionRef.current.stop();
-        setIsListening(false);
-      }
-    }
   }, [isOpen]);
-
-  const toggleListening = () => {
-    if (isListening) {
-      if (recognitionRef.current) {
-        recognitionRef.current.stop();
-      }
-      setIsListening(false);
-      return;
-    }
-
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (!SpeechRecognition) {
-      alert('Speech recognition is not supported in this browser.');
-      return;
-    }
-
-    const recognition = new SpeechRecognition();
-    recognition.continuous = true;
-    recognition.interimResults = true;
-    
-    recognition.onresult = (event: any) => {
-      let finalTranscript = '';
-      for (let i = event.resultIndex; i < event.results.length; ++i) {
-        if (event.results[i].isFinal) {
-          finalTranscript += event.results[i][0].transcript;
-        }
-      }
-      if (finalTranscript) {
-        setFormData((prev: any) => ({ 
-          ...prev, 
-          description: prev.description ? prev.description + ' ' + finalTranscript : finalTranscript 
-        }));
-      }
-    };
-
-    recognition.onerror = (event: any) => {
-      console.error('Speech recognition error', event.error);
-      setIsListening(false);
-    };
-
-    recognition.onend = () => {
-      setIsListening(false);
-    };
-
-    try {
-      recognition.start();
-      recognitionRef.current = recognition;
-      setIsListening(true);
-    } catch (err) {
-      console.error('Failed to start speech recognition', err);
-      setIsListening(false);
-    }
-  };
 
   useEffect(() => {
     if (isOpen && issue) {
@@ -167,40 +105,6 @@ export const IssueModal: React.FC<IssueModalProps> = ({ isOpen, onClose, onSave,
     setShowDeleteConfirm(false);
   }, [issue, isOpen, defaultType]);
 
-  const suggestedAssignees = React.useMemo(() => {
-    if (!users.length) return [];
-    
-    // Count active tasks for each user
-    const activeTasksCount: Record<string, number> = {};
-    users.forEach(u => activeTasksCount[u.uid] = 0);
-    allIssues.forEach(issueItem => {
-      if (issueItem.status !== 'done' && issueItem.assigneeUid) {
-        activeTasksCount[issueItem.assigneeUid] = (activeTasksCount[issueItem.assigneeUid] || 0) + 1;
-      }
-    });
-
-    // Score users
-    const scoredUsers = users.map(u => {
-      let score = 0;
-      
-      // Role-based matching
-      if (formData.type === 'bug' && u.role === 'Developer') score += 10;
-      if (formData.type === 'task' && u.role !== 'Admin') score += 5;
-      
-      // Load balancing: favor users with fewer active tasks
-      const load = activeTasksCount[u.uid] || 0;
-      score -= load * 2; // Subtract points for high workload
-      
-      return { user: u, score, load };
-    });
-
-    // Sort by score descending
-    scoredUsers.sort((a, b) => b.score - a.score);
-    
-    // Return top 3
-    return scoredUsers.slice(0, 3).map(s => s.user);
-  }, [users, allIssues, formData.type]);
-
   if (!isOpen) return null;
 
   const handleAssigneeChange = (uid: string) => {
@@ -244,8 +148,17 @@ export const IssueModal: React.FC<IssueModalProps> = ({ isOpen, onClose, onSave,
     (issue && (userProfile?.uid === issue.assigneeUid || userProfile?.uid === issue.reporterUid));
 
   return (
-    <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh] relative">
+    <div 
+      className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) {
+          onClose();
+        }
+      }}
+    >
+      <div 
+        className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh] relative"
+      >
         {showDeleteConfirm && (
           <div className="absolute inset-0 bg-white/95 dark:bg-slate-800/95 backdrop-blur-sm z-[60] flex items-center justify-center p-8 text-center">
             <div className="max-w-sm">
@@ -278,7 +191,7 @@ export const IssueModal: React.FC<IssueModalProps> = ({ isOpen, onClose, onSave,
           <h2 className="text-xl font-bold text-slate-800 dark:text-white">
             {issue ? (isEditing ? 'Edit Issue' : 'Issue Details') : 'Create New Issue'}
           </h2>
-          <button onClick={onClose} className="p-2 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-full text-slate-500 dark:text-slate-400 transition-colors">
+          <button type="button" onClick={onClose} className="p-2 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-full text-slate-500 dark:text-slate-400 transition-colors">
             <X size={20} />
           </button>
         </div>
@@ -338,15 +251,6 @@ export const IssueModal: React.FC<IssueModalProps> = ({ isOpen, onClose, onSave,
                     <p className="text-slate-500 dark:text-slate-500 italic text-sm">No description provided.</p>
                   )}
                 </div>
-
-                {issue.voiceNoteUrl && (
-                  <div>
-                    <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">Voice Note</h3>
-                    <div className="bg-slate-50 dark:bg-slate-900/50 p-3 rounded-lg border border-slate-200 dark:border-slate-700/50 flex items-center">
-                      <audio src={issue.voiceNoteUrl} controls className="h-10 max-w-full" />
-                    </div>
-                  </div>
-                )}
 
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div className="bg-slate-50 dark:bg-slate-900/50 p-3 rounded-lg border border-slate-200 dark:border-slate-700/50">
@@ -489,45 +393,13 @@ export const IssueModal: React.FC<IssueModalProps> = ({ isOpen, onClose, onSave,
               </div>
 
               <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Description</label>
-                  <button
-                    type="button"
-                    onClick={toggleListening}
-                    className={`flex items-center gap-1.5 px-2 py-1 text-xs font-medium rounded-md transition-colors ${
-                      isListening
-                        ? 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400'
-                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700'
-                    }`}
-                    title={isListening ? "Stop Dictation" : "Start Voice Dictation"}
-                  >
-                    {isListening ? (
-                      <>
-                        <MicOff size={14} className="animate-pulse" /> Stop
-                      </>
-                    ) : (
-                      <>
-                        <Mic size={14} /> Dictate
-                      </>
-                    )}
-                  </button>
-                </div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Description</label>
                 <textarea
                   rows={4}
                   value={formData.description}
                   onChange={e => setFormData({ ...formData, description: e.target.value })}
                   className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-tawny-port focus:border-tawny-port outline-none transition-all resize-none bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100"
                   placeholder="Detailed description, steps to reproduce, etc..."
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Voice Note</label>
-                <AudioRecorder 
-                  issueId={issue?.id}
-                  existingAudioUrl={formData.voiceNoteUrl}
-                  onUploadComplete={(url) => setFormData({ ...formData, voiceNoteUrl: url })}
-                  onRemoveAudio={() => setFormData({ ...formData, voiceNoteUrl: null })}
                 />
               </div>
 
@@ -589,22 +461,6 @@ export const IssueModal: React.FC<IssueModalProps> = ({ isOpen, onClose, onSave,
                       <option key={u.uid} value={u.uid}>{u.displayName}</option>
                     ))}
                   </select>
-                  {suggestedAssignees.length > 0 && !formData.assigneeUid && (
-                    <div className="mt-2 flex flex-wrap gap-2 items-center">
-                      <span className="text-xs text-slate-500 dark:text-slate-400">Suggested:</span>
-                      {suggestedAssignees.map(u => (
-                        <button
-                          key={u.uid}
-                          type="button"
-                          onClick={() => handleAssigneeChange(u.uid)}
-                          className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-xs font-medium text-slate-700 dark:text-slate-300 transition-colors"
-                        >
-                          <Avatar src={u.photoURL || undefined} name={u.displayName} size="sm" className="w-4 h-4 text-[8px]" />
-                          {u.displayName}
-                        </button>
-                      ))}
-                    </div>
-                  )}
                 </div>
 
                 <div>
@@ -814,9 +670,13 @@ export const IssueModal: React.FC<IssueModalProps> = ({ isOpen, onClose, onSave,
           <div className="flex gap-3">
             <button
               type="button"
-              onClick={() => {
-                if (isEditing && issue) setIsEditing(false);
-                else onClose();
+              onClick={(e) => {
+                e.preventDefault();
+                if (isEditing && issue) {
+                  setIsEditing(false);
+                } else {
+                  onClose();
+                }
               }}
               className="px-4 py-2 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors font-medium"
             >
