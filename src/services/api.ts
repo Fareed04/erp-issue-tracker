@@ -13,8 +13,7 @@ import {
   onSnapshot,
   where
 } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { db, storage } from '../firebase';
+import { db } from '../firebase';
 import { Issue, CreateIssuePayload, BulkUpdatePayload, UserProfile, ActivityLog, Comment, AppNotification } from '../types';
 
 const ISSUES_COLLECTION = 'issues';
@@ -328,7 +327,7 @@ export const getUserProfile = async (uid: string): Promise<UserProfile | null> =
       await updateUserProfile(updatedProfile);
       return updatedProfile;
     }
-    return { uid: snapshot.id, ...data };
+    return { ...data, uid: snapshot.id };
   }
   return null;
 };
@@ -342,10 +341,13 @@ export const getAllUserProfiles = async (): Promise<UserProfile[]> => {
   const snapshot = await getDocs(collection(db, USERS_COLLECTION));
   return snapshot.docs.map(doc => ({ uid: doc.id, ...doc.data() } as UserProfile));
 };
-
-export const uploadVoiceNote = async (audioBlob: Blob, issueId?: string): Promise<string> => {
-  const filename = `voice_notes/${issueId || 'temp'}_${Date.now()}.webm`;
-  const storageRef = ref(storage, filename);
-  await uploadBytes(storageRef, audioBlob);
-  return await getDownloadURL(storageRef);
+export const uploadVoiceNote = async (blob: Blob, _issueId?: string): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      resolve(reader.result as string);
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
 };

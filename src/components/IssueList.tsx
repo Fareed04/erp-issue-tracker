@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Issue, IssueStatus, IssuePriority, BulkUpdatePayload } from '../types';
 import { format } from 'date-fns';
 import { clsx } from 'clsx';
-import { AlertCircle, CheckCircle2, Clock, CircleDashed, CheckSquare, Square, UserPlus, ArrowUpCircle, Layout } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Clock, CircleDashed, CheckSquare, Square } from 'lucide-react';
 import { Avatar } from './Avatar';
 
 interface IssueListProps {

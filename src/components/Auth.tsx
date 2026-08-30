@@ -1,12 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { signInWithPopup, signOut, signInWithCredential, GoogleAuthProvider } from 'firebase/auth';
+import { signInWithPopup, signOut } from 'firebase/auth';
 import { auth, googleProvider } from '../firebase';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { LogIn, LogOut, User, Settings, X, Save, Bell, HelpCircle } from 'lucide-react';
 import { updateUserProfile, getUserProfile } from '../services/api';
 import { NotificationPreferences } from '../types';
-
-const GOOGLE_CLIENT_ID = "1085029246456-vr523qhq1kb3paofppt0vsbsu0etdcq4.apps.googleusercontent.com";
 
 export const Auth: React.FC = () => {
   const [user, loading] = useAuthState(auth);
@@ -51,14 +49,7 @@ export const Auth: React.FC = () => {
         }
       }
     } catch (err: any) {
-      if (err.code === 'auth/popup-closed-by-user' || err.code === 'auth/cancelled-popup-request') {
-        setLoginError('Login cancelled. Please try again.');
-        setTimeout(() => setLoginError(null), 5000);
-        return;
-      }
-      if (err.code === 'auth/popup-blocked' || err.message?.includes('INTERNAL ASSERTION FAILED')) {
-        setLoginError('Popup blocked. Please open the app in a new tab to sign in, or allow popups.');
-        console.error('Login failed (popup blocked)', err);
+      if (err.code === 'auth/popup-closed-by-user') {
         return;
       }
       setLoginError('Login failed. Please try again.');
@@ -311,17 +302,7 @@ export const Auth: React.FC = () => {
         Sign In
       </button>
       {loginError && (
-        <div className="flex flex-col items-center gap-2">
-          <p className="text-xs text-red-600 dark:text-red-400 font-medium text-center max-w-xs">{loginError}</p>
-          {loginError.includes('new tab') && (
-            <button
-              onClick={() => window.open(window.location.href, '_blank')}
-              className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline font-medium"
-            >
-              Open App in New Tab
-            </button>
-          )}
-        </div>
+        <p className="text-xs text-red-600 dark:text-red-400 font-medium animate-pulse">{loginError}</p>
       )}
     </div>
   );

@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Mic, Square, Play, Trash2, Loader2 } from 'lucide-react';
+import { Mic, Square, Trash2, Loader2 } from 'lucide-react';
 import { uploadVoiceNote } from '../services/api';
 
 interface AudioRecorderProps {

@@ -2,7 +2,7 @@
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
-// Force reload for applet
+
 import React, { useState, useEffect } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { Dashboard } from './components/Dashboard';
@@ -11,14 +11,12 @@ import { IssueList } from './components/IssueList';
 import { IssueModal } from './components/IssueModal';
 import { Issue, CreateIssuePayload, IssueStatus, FilterOptions, BulkUpdatePayload, IssueType } from './types';
 import * as api from './services/api';
-import { Plus, Menu, Download, Keyboard } from 'lucide-react';
+import { Plus, Menu, Download } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { FilterBar } from './components/FilterBar';
 import { NotificationCenter } from './components/NotificationCenter';
 import { ThemeToggle } from './components/ThemeToggle';
 import { UsersManagement } from './components/UsersManagement';
-import { SkeletonLoader } from './components/SkeletonLoader';
-import { KeyboardShortcutsModal } from './components/KeyboardShortcutsModal';
 
 import { auth } from './firebase';
 import { useAuthState } from 'react-firebase-hooks/auth';
@@ -45,11 +43,9 @@ export default function App() {
   const [issues, setIssues] = useState<Issue[]>([]);
   const [filters, setFilters] = useState<FilterOptions>(initialFilters);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isKeyboardModalOpen, setIsKeyboardModalOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [editingIssue, setEditingIssue] = useState<Issue | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [toasts, setToasts] = useState<{id: string, message: string, type: 'success'|'error'|'info'|'warning'}[]>([]);
   const [defaultNewIssueType, setDefaultNewIssueType] = useState<IssueType | undefined>(undefined);
 
   useEffect(() => {
@@ -73,9 +69,6 @@ export default function App() {
         if (searchInput) {
           searchInput.focus();
         }
-      } else if (e.key === '?') {
-        e.preventDefault();
-        setIsKeyboardModalOpen(true);
       }
     };
 
@@ -180,11 +173,8 @@ export default function App() {
 
 
   const addNotification = (message: string, type: 'success'|'error'|'info'|'warning') => {
-    const id = Date.now().toString();
-    setToasts(prev => [...prev, { id, message, type }]);
-    setTimeout(() => {
-      setToasts(prev => prev.filter(n => n.id !== id));
-    }, 5000);
+    // Toasts display logic not implemented, just logging for now
+    console.log(`[${type}] ${message}`);
   };
 
   const filteredIssues = issues.filter(issue => {
@@ -257,7 +247,7 @@ export default function App() {
           handleTutorialNext();
         }
       }
-      console.log("App.tsx onClose called"); setIsModalOpen(false);
+      setIsModalOpen(false);
       setEditingIssue(null);
     } catch (error) {
       console.error('Failed to save issue', error);
@@ -268,7 +258,7 @@ export default function App() {
   const handleDeleteIssue = async (id: string) => {
     try {
       await api.deleteIssue(id, user);
-      console.log("App.tsx onClose called"); setIsModalOpen(false);
+      setIsModalOpen(false);
       setEditingIssue(null);
       addNotification('Issue deleted successfully.', 'info');
       
@@ -402,14 +392,6 @@ export default function App() {
           <div className="flex items-center gap-1.5 sm:gap-2 lg:gap-4 flex-shrink-0">
             <Auth />
             <div className="h-8 w-px bg-slate-200 dark:bg-slate-700 mx-1 hidden sm:block"></div>
-            <button
-              onClick={() => setIsKeyboardModalOpen(true)}
-              className="p-2 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-slate-400 dark:focus:ring-slate-600"
-              title="Keyboard Shortcuts (?)"
-              aria-label="Keyboard Shortcuts"
-            >
-              <Keyboard size={20} />
-            </button>
             <ThemeToggle />
             <NotificationCenter 
               userId={user?.uid} 
@@ -426,7 +408,7 @@ export default function App() {
             </button>
             <button
               id="new-issue-btn"
-              onClick={openNewIssueModal}
+              onClick={() => openNewIssueModal()}
               className="flex items-center justify-center gap-2 bg-tawny-port hover:bg-tawny-port/90 text-white w-10 h-10 sm:w-auto sm:px-3 lg:px-4 sm:py-2 rounded-lg text-sm lg:text-base font-medium transition-colors shadow-sm shrink-0"
               title="New Issue"
             >
@@ -438,8 +420,8 @@ export default function App() {
 
         <div className="flex-1 overflow-y-auto">
           {isLoading ? (
-            <div className="max-w-[1600px] mx-auto">
-              <SkeletonLoader view={currentView} />
+            <div className="h-full flex items-center justify-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-tawny-port"></div>
             </div>
           ) : (
             <div className="max-w-[1600px] mx-auto">
@@ -450,58 +432,6 @@ export default function App() {
                     onFilterChange={setFilters}
                     onClearFilters={() => setFilters(initialFilters)}
                   />
-                  <div className="flex flex-wrap gap-2 mt-4">
-                    <button
-                      onClick={() => setFilters(prev => ({ ...prev, assignee: prev.assignee === (user?.displayName || '') ? '' : (user?.displayName || '') }))}
-                      className={`px-3 py-1.5 text-sm rounded-full border transition-colors ${
-                        filters.assignee === user?.displayName && user?.displayName 
-                          ? 'bg-indigo-100 border-indigo-300 text-indigo-800 dark:bg-indigo-900/50 dark:border-indigo-700 dark:text-indigo-300' 
-                          : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:border-slate-700 dark:text-slate-300'
-                      }`}
-                    >
-                      My Tasks
-                    </button>
-                    <button
-                      onClick={() => setFilters(prev => ({ ...prev, priority: prev.priority === 'high' ? '' : 'high' }))}
-                      className={`px-3 py-1.5 text-sm rounded-full border transition-colors ${
-                        filters.priority === 'high'
-                          ? 'bg-red-100 border-red-300 text-red-800 dark:bg-red-900/50 dark:border-red-700 dark:text-red-300'
-                          : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:border-slate-700 dark:text-slate-300'
-                      }`}
-                    >
-                      High Priority
-                    </button>
-                    <button
-                      onClick={() => setFilters(prev => ({ ...prev, type: 'bug' === prev.type ? '' : 'bug' }))}
-                      className={`px-3 py-1.5 text-sm rounded-full border transition-colors ${
-                        filters.type === 'bug'
-                          ? 'bg-orange-100 border-orange-300 text-orange-800 dark:bg-orange-900/50 dark:border-orange-700 dark:text-orange-300'
-                          : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:border-slate-700 dark:text-slate-300'
-                      }`}
-                    >
-                      Bugs
-                    </button>
-                    <button
-                      onClick={() => setFilters(prev => ({ ...prev, status: prev.status === 'in_progress' ? '' : 'in_progress' }))}
-                      className={`px-3 py-1.5 text-sm rounded-full border transition-colors ${
-                        filters.status === 'in_progress'
-                          ? 'bg-blue-100 border-blue-300 text-blue-800 dark:bg-blue-900/50 dark:border-blue-700 dark:text-blue-300'
-                          : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:border-slate-700 dark:text-slate-300'
-                      }`}
-                    >
-                      In Progress
-                    </button>
-                    <button
-                      onClick={() => setFilters(prev => ({ ...prev, status: prev.status === 'done' ? '' : 'done' }))}
-                      className={`px-3 py-1.5 text-sm rounded-full border transition-colors ${
-                        filters.status === 'done'
-                          ? 'bg-emerald-100 border-emerald-300 text-emerald-800 dark:bg-emerald-900/50 dark:border-emerald-700 dark:text-emerald-300'
-                          : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:border-slate-700 dark:text-slate-300'
-                      }`}
-                    >
-                      Completed
-                    </button>
-                  </div>
                 </div>
               )}
               
@@ -532,7 +462,7 @@ export default function App() {
       <IssueModal
         isOpen={isModalOpen}
         onClose={() => {
-          console.log("App.tsx onClose called"); setIsModalOpen(false);
+          setIsModalOpen(false);
           setEditingIssue(null);
           setDefaultNewIssueType(undefined);
         }}
@@ -542,11 +472,6 @@ export default function App() {
         userProfile={userProfile}
         allIssues={issues}
         defaultType={defaultNewIssueType}
-      />
-
-      <KeyboardShortcutsModal 
-        isOpen={isKeyboardModalOpen} 
-        onClose={() => setIsKeyboardModalOpen(false)} 
       />
 
       {userProfile && !userProfile.tutorialCompleted && (

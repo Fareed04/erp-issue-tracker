@@ -10,15 +10,10 @@ import {
   useSensor,
   useSensors,
   PointerSensor,
-  defaultDropAnimationSideEffects,
   DragEndEvent,
   DragStartEvent,
-  DragOverEvent,
-  closestCorners
 } from '@dnd-kit/core';
-import { useDroppable } from '@dnd-kit/core';
-import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
+import { useDraggable, useDroppable } from '@dnd-kit/core';
 import { createPortal } from 'react-dom';
 
 interface BoardProps {
@@ -88,45 +83,40 @@ function IssueCard({ issue, onClick, isOverlay }: { issue: Issue; onClick?: () =
   );
 }
 
-const SortableIssue: React.FC<{ issue: Issue, onEditIssue: (i: Issue) => void, containerData: any }> = ({ issue, onEditIssue, containerData }) => {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+const DraggableIssue: React.FC<{ issue: Issue, onEditIssue: (i: Issue) => void }> = ({ issue, onEditIssue }) => {
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: issue.id,
-    data: { ...issue, containerData },
+    data: issue,
   });
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-  };
 
   if (isDragging) {
     return (
       <div 
         className="opacity-30 bg-white dark:bg-slate-800 p-4 rounded-lg border border-dashed border-slate-400 dark:border-slate-600 h-[120px]"
         ref={setNodeRef}
-        style={style}
       />
     );
   }
 
   return (
-    <div
+    <motion.div
+      layout
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
       ref={setNodeRef}
-      style={style}
       {...listeners}
       {...attributes}
-      className="touch-none outline-none"
+      className="touch-none"
     >
       <IssueCard issue={issue} onClick={() => onEditIssue(issue)} />
-    </div>
+    </motion.div>
   );
 }
 
 function DroppableColumn({ id, column, issues, swimlaneBy, swimlaneGroup, onEditIssue }: any) {
-  const containerData = { status: column.id, swimlaneBy, swimlaneGroupId: swimlaneGroup.id };
   const { setNodeRef, isOver } = useDroppable({
     id,
-    data: containerData,
+    data: { status: column.id, swimlaneBy, swimlaneGroupId: swimlaneGroup.id },
   });
 
   const Icon = column.icon;
@@ -152,11 +142,9 @@ function DroppableColumn({ id, column, issues, swimlaneBy, swimlaneGroup, onEdit
       )}
 
       <div ref={setNodeRef} className={clsx("p-4 space-y-3", swimlaneBy === 'none' ? 'flex-1 overflow-y-auto' : 'min-h-[120px]')}>
-        <SortableContext items={issues.map((i: Issue) => i.id)} strategy={verticalListSortingStrategy}>
-          {issues.map((issue: Issue) => (
-            <SortableIssue key={issue.id} issue={issue} onEditIssue={onEditIssue} containerData={containerData} />
-          ))}
-        </SortableContext>
+        {issues.map((issue: Issue) => (
+          <DraggableIssue key={issue.id} issue={issue} onEditIssue={onEditIssue} />
+        ))}
       </div>
     </div>
   );
@@ -165,22 +153,14 @@ function DroppableColumn({ id, column, issues, swimlaneBy, swimlaneGroup, onEdit
 export const Board: React.FC<BoardProps> = ({ issues, onUpdateStatus, onUpdateIssueField, onEditIssue }) => {
   const [swimlaneBy, setSwimlaneBy] = useState<'none' | 'assignee' | 'priority'>('none');
 
-  const sortedIssues = useMemo(() => {
-    return [...issues].sort((a, b) => {
-      const orderA = a.order ?? new Date(a.created_at).getTime();
-      const orderB = b.order ?? new Date(b.created_at).getTime();
-      return orderA - orderB;
-    });
-  }, [issues]);
-
   const groupedIssues = useMemo(() => {
     if (swimlaneBy === 'none') {
-      return [{ id: 'all', title: 'All Issues', issues: sortedIssues }];
+      return [{ id: 'all', title: 'All Issues', issues }];
     }
     if (swimlaneBy === 'assignee') {
-      const unassigned = sortedIssues.filter(i => !i.assigneeUid);
+      const unassigned = issues.filter(i => !i.assigneeUid);
       const assignees = new Map<string, { id: string; title: string; issues: Issue[] }>();
-      sortedIssues.forEach(i => {
+      issues.forEach(i => {
         if (i.assigneeUid) {
           if (!assignees.has(i.assigneeUid)) {
             assignees.set(i.assigneeUid, { id: i.assigneeUid, title: i.assigneeName || 'Unknown', issues: [] });
@@ -197,11 +177,11 @@ export const Board: React.FC<BoardProps> = ({ issues, onUpdateStatus, onUpdateIs
       return priorities.map(p => ({
         id: p,
         title: p.charAt(0).toUpperCase() + p.slice(1),
-        issues: sortedIssues.filter(i => i.priority === p)
+        issues: issues.filter(i => i.priority === p)
       })).filter(group => group.issues.length > 0);
     }
     return [];
-  }, [sortedIssues, swimlaneBy]);
+  }, [issues, swimlaneBy]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -225,19 +205,14 @@ export const Board: React.FC<BoardProps> = ({ issues, onUpdateStatus, onUpdateIs
     if (!over) return;
 
     const issueId = active.id as string;
-    const activeIssueData = active.data.current as any;
-    const overId = over.id;
+    const dropData = over.data.current as { status: IssueStatus; swimlaneBy: string; swimlaneGroupId: string } | undefined;
     
-    let dropData = over.data.current?.containerData || over.data.current;
-    
-    // Fallback: If we dropped on the SortableContext column background, dropData might be just the container data
     if (!dropData) return;
 
     const updates: Partial<Issue> = {};
     const issue = issues.find(i => i.id === issueId);
     if (!issue) return;
 
-    // Handle Status and Swimlane Updates
     if (issue.status !== dropData.status) {
       if (onUpdateIssueField) {
         updates.status = dropData.status;
@@ -257,51 +232,7 @@ export const Board: React.FC<BoardProps> = ({ issues, onUpdateStatus, onUpdateIs
       }
     }
 
-    // Handle Ordering
-    if (onUpdateIssueField) {
-      const currentContainerIssues = groupedIssues
-        .find(g => g.id === dropData.swimlaneGroupId)
-        ?.issues.filter(i => i.status === dropData.status) || [];
-
-      // If we dropped over another item
-      if (over.data.current?.sortable) {
-        const overIndex = currentContainerIssues.findIndex(i => i.id === overId);
-        if (overIndex !== -1) {
-          const isMovingDown = active.data.current?.sortable?.index < over.data.current?.sortable?.index;
-          
-          let prevOrder = null;
-          let nextOrder = null;
-
-          if (isMovingDown) {
-             prevOrder = currentContainerIssues[overIndex]?.order ?? new Date(currentContainerIssues[overIndex]?.created_at).getTime();
-             nextOrder = currentContainerIssues[overIndex + 1]?.order ?? (currentContainerIssues[overIndex + 1] ? new Date(currentContainerIssues[overIndex + 1]?.created_at).getTime() : null);
-          } else {
-             prevOrder = currentContainerIssues[overIndex - 1]?.order ?? (currentContainerIssues[overIndex - 1] ? new Date(currentContainerIssues[overIndex - 1]?.created_at).getTime() : null);
-             nextOrder = currentContainerIssues[overIndex]?.order ?? new Date(currentContainerIssues[overIndex]?.created_at).getTime();
-          }
-
-          if (prevOrder === null && nextOrder === null) {
-             updates.order = Date.now();
-          } else if (prevOrder === null) {
-             updates.order = nextOrder! - 100000;
-          } else if (nextOrder === null) {
-             updates.order = prevOrder! + 100000;
-          } else {
-             updates.order = (prevOrder + nextOrder) / 2;
-          }
-        }
-      } else {
-        // Dropped on empty column or at the end
-        if (currentContainerIssues.length > 0 && issue.status !== dropData.status) {
-          const lastIssue = currentContainerIssues[currentContainerIssues.length - 1];
-          const lastOrder = lastIssue.order ?? new Date(lastIssue.created_at).getTime();
-          updates.order = lastOrder + 100000;
-        }
-      }
-    }
-
     if (Object.keys(updates).length > 0 && onUpdateIssueField) {
-      // Optimistic sorting could be added here, but relying on server is fine for this requirement scope
       onUpdateIssueField(issueId, updates);
     }
   };
@@ -309,7 +240,6 @@ export const Board: React.FC<BoardProps> = ({ issues, onUpdateStatus, onUpdateIs
   return (
     <DndContext
       sensors={sensors}
-      collisionDetection={closestCorners}
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
@@ -353,7 +283,7 @@ export const Board: React.FC<BoardProps> = ({ issues, onUpdateStatus, onUpdateIs
               </div>
             )}
 
-            {groupedIssues.map((group, index) => (
+            {groupedIssues.map((group) => (
               <div key={group.id} className={clsx("flex flex-col gap-4", swimlaneBy === 'none' ? 'h-full' : 'shrink-0')}>
                 {swimlaneBy !== 'none' && (
                   <div className="sticky left-0 w-max pb-2 border-b-2 border-slate-200 dark:border-slate-700 mt-2 z-10">

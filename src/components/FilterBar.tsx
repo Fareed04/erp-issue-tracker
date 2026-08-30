@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { FilterOptions, UserProfile } from '../types';
-import { Search, Filter, Calendar, X } from 'lucide-react';
+import { Search, Calendar, X } from 'lucide-react';
 import * as api from '../services/api';
 
 interface FilterBarProps {

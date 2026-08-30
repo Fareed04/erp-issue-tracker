@@ -79,7 +79,7 @@ export const UsersManagement: React.FC<UsersManagementProps> = ({ currentUserPro
                   <tr key={u.uid} className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        <Avatar src={u.photoURL || undefined} name={u.displayName} size="sm" className="w-8 h-8 text-xs" />
+                        <Avatar src={u.photoURL || null} name={u.displayName} size="sm" className="w-8 h-8 text-xs" />
                         <span className="font-medium text-slate-900 dark:text-slate-100">{u.displayName}</span>
                       </div>
                     </td>

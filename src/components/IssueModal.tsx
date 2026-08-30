@@ -3,6 +3,7 @@ import { Issue, CreateIssuePayload, IssueType, IssueStatus, IssuePriority, UserP
 import { X, Save, Trash2, User, Clock, Edit3 } from 'lucide-react';
 import * as api from '../services/api';
 import { Avatar } from './Avatar';
+import { AudioRecorder } from './AudioRecorder';
 import { formatDistanceToNow } from 'date-fns';
 import { auth } from '../firebase';
 
@@ -37,6 +38,7 @@ export const IssueModal: React.FC<IssueModalProps> = ({ isOpen, onClose, onSave,
     delay_cause: '',
     dueDate: '',
     links: [],
+    voiceNoteUrl: '',
   });
 
   useEffect(() => {
@@ -83,6 +85,7 @@ export const IssueModal: React.FC<IssueModalProps> = ({ isOpen, onClose, onSave,
         delay_cause: issue.delay_cause || '',
         dueDate: issue.dueDate || '',
         links: issue.links || [],
+        voiceNoteUrl: issue.voiceNoteUrl || '',
       });
       setIsEditing(false);
     } else {
@@ -98,6 +101,7 @@ export const IssueModal: React.FC<IssueModalProps> = ({ isOpen, onClose, onSave,
         delay_cause: '',
         dueDate: '',
         links: [],
+        voiceNoteUrl: '',
       });
       setActiveTab('details');
       setIsEditing(true);
@@ -148,17 +152,8 @@ export const IssueModal: React.FC<IssueModalProps> = ({ isOpen, onClose, onSave,
     (issue && (userProfile?.uid === issue.assigneeUid || userProfile?.uid === issue.reporterUid));
 
   return (
-    <div 
-      className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) {
-          onClose();
-        }
-      }}
-    >
-      <div 
-        className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh] relative"
-      >
+    <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh] relative">
         {showDeleteConfirm && (
           <div className="absolute inset-0 bg-white/95 dark:bg-slate-800/95 backdrop-blur-sm z-[60] flex items-center justify-center p-8 text-center">
             <div className="max-w-sm">
@@ -191,7 +186,7 @@ export const IssueModal: React.FC<IssueModalProps> = ({ isOpen, onClose, onSave,
           <h2 className="text-xl font-bold text-slate-800 dark:text-white">
             {issue ? (isEditing ? 'Edit Issue' : 'Issue Details') : 'Create New Issue'}
           </h2>
-          <button type="button" onClick={onClose} className="p-2 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-full text-slate-500 dark:text-slate-400 transition-colors">
+          <button onClick={onClose} className="p-2 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-full text-slate-500 dark:text-slate-400 transition-colors">
             <X size={20} />
           </button>
         </div>
@@ -250,6 +245,12 @@ export const IssueModal: React.FC<IssueModalProps> = ({ isOpen, onClose, onSave,
                   ) : (
                     <p className="text-slate-500 dark:text-slate-500 italic text-sm">No description provided.</p>
                   )}
+                  {issue.voiceNoteUrl && (
+                    <div className="mt-4">
+                      <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-2">Voice Note</h3>
+                      <audio src={issue.voiceNoteUrl} controls className="h-10 w-full max-w-sm rounded-lg" />
+                    </div>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -275,7 +276,7 @@ export const IssueModal: React.FC<IssueModalProps> = ({ isOpen, onClose, onSave,
                   <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-2">Assignee</h3>
                   {issue.assigneeUid ? (
                     <div className="flex items-center gap-3">
-                      <Avatar src={issue.assigneePhoto || undefined} name={issue.assigneeName || 'Unknown'} size="sm" />
+                      <Avatar src={issue.assigneePhoto || null} name={issue.assigneeName || 'Unknown'} size="sm" />
                       <span className="font-medium text-slate-900 dark:text-slate-100">{issue.assigneeName}</span>
                     </div>
                   ) : (
@@ -357,7 +358,7 @@ export const IssueModal: React.FC<IssueModalProps> = ({ isOpen, onClose, onSave,
                       {activities.slice(0, 3).map((activity) => (
                         <div key={activity.id} className="text-sm">
                           <div className="flex items-center gap-2 mb-1">
-                            <Avatar src={activity.userPhoto || undefined} name={activity.userName} size="sm" className="w-5 h-5 text-[10px]" />
+                            <Avatar src={activity.userPhoto || null} name={activity.userName} size="sm" className="w-5 h-5 text-[10px]" />
                             <span className="font-medium text-slate-700 dark:text-slate-300">{activity.userName}</span>
                             <span className="text-slate-500 text-xs">
                               {formatDistanceToNow(new Date(activity.timestamp), { addSuffix: true })}
@@ -400,6 +401,16 @@ export const IssueModal: React.FC<IssueModalProps> = ({ isOpen, onClose, onSave,
                   onChange={e => setFormData({ ...formData, description: e.target.value })}
                   className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-tawny-port focus:border-tawny-port outline-none transition-all resize-none bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100"
                   placeholder="Detailed description, steps to reproduce, etc..."
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Voice Note (Optional)</label>
+                <AudioRecorder 
+                  issueId={issue?.id}
+                  existingAudioUrl={formData.voiceNoteUrl}
+                  onUploadComplete={(url) => setFormData({ ...formData, voiceNoteUrl: url })}
+                  onRemoveAudio={() => setFormData({ ...formData, voiceNoteUrl: '' })}
                 />
               </div>
 
@@ -556,11 +567,11 @@ export const IssueModal: React.FC<IssueModalProps> = ({ isOpen, onClose, onSave,
                 </div>
               ) : (
                 <div className="relative border-l border-slate-200 dark:border-slate-700 ml-3 space-y-6">
-                  {activities.map((activity, index) => (
+                  {activities.map((activity) => (
                     <div key={activity.id} className="relative pl-6">
                       <div className="absolute -left-3 top-0">
                         <Avatar 
-                          src={activity.userPhoto || undefined} 
+                          src={activity.userPhoto || null} 
                           name={activity.userName} 
                           size="sm" 
                           className="ring-4 ring-white dark:ring-slate-800"
@@ -595,7 +606,7 @@ export const IssueModal: React.FC<IssueModalProps> = ({ isOpen, onClose, onSave,
                   comments.map((comment) => (
                     <div key={comment.id} className="flex gap-3">
                       <Avatar 
-                        src={comment.userPhoto || undefined} 
+                        src={comment.userPhoto || null} 
                         name={comment.userName} 
                         size="sm" 
                         className="shrink-0 mt-1"
@@ -670,13 +681,9 @@ export const IssueModal: React.FC<IssueModalProps> = ({ isOpen, onClose, onSave,
           <div className="flex gap-3">
             <button
               type="button"
-              onClick={(e) => {
-                e.preventDefault();
-                if (isEditing && issue) {
-                  setIsEditing(false);
-                } else {
-                  onClose();
-                }
+              onClick={() => {
+                if (isEditing && issue) setIsEditing(false);
+                else onClose();
               }}
               className="px-4 py-2 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors font-medium"
             >
