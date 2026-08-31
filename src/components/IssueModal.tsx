@@ -4,6 +4,7 @@ import { X, Save, Trash2, User, Clock, Edit3 } from 'lucide-react';
 import * as api from '../services/api';
 import { Avatar } from './Avatar';
 import { AudioRecorder } from './AudioRecorder';
+import { AudioPlayer } from './AudioPlayer';
 import { formatDistanceToNow } from 'date-fns';
 import { auth } from '../firebase';
 
@@ -248,7 +249,7 @@ export const IssueModal: React.FC<IssueModalProps> = ({ isOpen, onClose, onSave,
                   {issue.voiceNoteUrl && (
                     <div className="mt-4">
                       <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-2">Voice Note</h3>
-                      <audio src={issue.voiceNoteUrl} controls className="h-10 w-full max-w-sm rounded-lg" />
+                      <AudioPlayer src={issue.voiceNoteUrl} />
                     </div>
                   )}
                 </div>

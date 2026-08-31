@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { Mic, Square, Trash2, Loader2 } from 'lucide-react';
 import { uploadVoiceNote } from '../services/api';
+import { AudioPlayer } from './AudioPlayer';
 
 interface AudioRecorderProps {
   issueId?: string;
@@ -69,15 +70,15 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({ issueId, onUploadC
 
   if (audioUrl) {
     return (
-      <div className="flex items-center gap-3 bg-slate-100 dark:bg-slate-800 p-3 rounded-lg border border-slate-200 dark:border-slate-700">
-        <audio src={audioUrl} controls className="h-8 max-w-[200px]" />
+      <div className="flex items-center gap-3 w-full">
+        <AudioPlayer src={audioUrl} />
         <button
           type="button"
           onClick={removeAudio}
-          className="text-slate-500 hover:text-red-500 dark:text-slate-400 dark:hover:text-red-400 transition-colors p-1"
+          className="flex items-center justify-center w-10 h-10 rounded-full bg-red-100 text-red-500 hover:bg-red-200 dark:bg-red-900/30 dark:hover:bg-red-900/50 transition-colors shrink-0"
           title="Remove Voice Note"
         >
-          <Trash2 size={16} />
+          <Trash2 size={18} />
         </button>
       </div>
     );
