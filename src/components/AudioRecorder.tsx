@@ -16,6 +16,54 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({ issueId, onUploadC
   const [audioUrl, setAudioUrl] = useState<string | null>(existingAudioUrl || null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const analyserRef = useRef<AnalyserNode | null>(null);
+  const animationRef = useRef<number | null>(null);
+
+  const drawWaveform = () => {
+    if (!canvasRef.current || !analyserRef.current) return;
+    
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    
+    const analyser = analyserRef.current;
+    const bufferLength = analyser.frequencyBinCount;
+    const dataArray = new Uint8Array(bufferLength);
+    
+    const draw = () => {
+      animationRef.current = requestAnimationFrame(draw);
+      
+      analyser.getByteTimeDomainData(dataArray);
+      
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = '#ef4444';
+      ctx.beginPath();
+      
+      const sliceWidth = canvas.width * 1.0 / bufferLength;
+      let x = 0;
+      
+      for (let i = 0; i < bufferLength; i++) {
+        const v = dataArray[i] / 128.0;
+        const y = v * canvas.height / 2;
+        
+        if (i === 0) {
+          ctx.moveTo(x, y);
+        } else {
+          ctx.lineTo(x, y);
+        }
+        x += sliceWidth;
+      }
+      
+      ctx.lineTo(canvas.width, canvas.height / 2);
+      ctx.stroke();
+    };
+    
+    draw();
+  };
 
   const startRecording = async () => {
     try {
@@ -50,6 +98,21 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({ issueId, onUploadC
 
       mediaRecorder.start();
       setIsRecording(true);
+
+      // Set up Audio Context for visualization
+      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+      const audioContext = new AudioContextClass();
+      audioContextRef.current = audioContext;
+      
+      const analyser = audioContext.createAnalyser();
+      analyser.fftSize = 256;
+      analyserRef.current = analyser;
+      
+      const source = audioContext.createMediaStreamSource(stream);
+      source.connect(analyser);
+      
+      // Delay drawing slightly to ensure canvas is rendered
+      setTimeout(drawWaveform, 50);
     } catch (error) {
       console.error("Error accessing microphone:", error);
       alert("Could not access microphone.");
@@ -60,6 +123,13 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({ issueId, onUploadC
     if (mediaRecorderRef.current && isRecording) {
       mediaRecorderRef.current.stop();
       setIsRecording(false);
+      
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
+      if (audioContextRef.current) {
+        audioContextRef.current.close().catch(console.error);
+      }
     }
   };
 
@@ -107,9 +177,12 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({ issueId, onUploadC
         </button>
       )}
       {isRecording && (
-        <div className="flex items-center gap-2 text-sm text-red-500 animate-pulse">
-          <div className="w-2 h-2 bg-red-500 rounded-full" />
-          Recording...
+        <div className="flex flex-1 items-center gap-3 px-3 py-1.5 bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-slate-200 dark:border-slate-700">
+          <div className="flex items-center gap-2 text-sm text-red-500 animate-pulse shrink-0">
+            <div className="w-2 h-2 bg-red-500 rounded-full" />
+            Rec
+          </div>
+          <canvas ref={canvasRef} width="200" height="24" className="w-full max-w-[200px] h-6" />
         </div>
       )}
     </div>
