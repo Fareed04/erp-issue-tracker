@@ -5,6 +5,16 @@ import { clsx } from 'clsx';
 import { AlertCircle, CheckCircle2, Clock, CircleDashed, CheckSquare, Square } from 'lucide-react';
 import { Avatar } from './Avatar';
 
+const isOverdue = (issue: Issue) => {
+  if (!issue.dueDate || issue.status === 'done') return false;
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, '0');
+  const day = String(today.getDate()).padStart(2, '0');
+  const todayStr = `${year}-${month}-${day}`;
+  return issue.dueDate < todayStr;
+};
+
 interface IssueListProps {
   issues: Issue[];
   onEditIssue: (issue: Issue) => void;
@@ -119,22 +129,33 @@ export const IssueList: React.FC<IssueListProps> = ({ issues, onEditIssue, onBul
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
-            {issues.map(issue => (
+            {issues.map(issue => {
+              const overdue = isOverdue(issue);
+              return (
               <tr 
                 key={issue.id} 
                 className={clsx(
-                  "hover:bg-slate-50 dark:hover:bg-slate-700/50 cursor-pointer transition-colors",
-                  selectedIds.includes(issue.id) && "bg-slate-50 dark:bg-slate-700/50"
+                  "hover:bg-slate-50 dark:hover:bg-slate-700/50 cursor-pointer transition-colors relative",
+                  selectedIds.includes(issue.id) && "bg-slate-50 dark:bg-slate-700/50",
+                  overdue && "ring-1 ring-inset ring-red-300 dark:ring-red-900/50 bg-red-50/30 dark:bg-red-900/10 z-10"
                 )}
                 onClick={() => onEditIssue(issue)}
               >
-                <td className="px-6 py-4" onClick={(e) => toggleSelect(issue.id, e)}>
+                <td className="px-6 py-4 relative" onClick={(e) => toggleSelect(issue.id, e)}>
+                  {overdue && <div className="absolute left-0 top-0 bottom-0 w-1 bg-red-400 dark:bg-red-500/80" />}
                   <button className="text-slate-400 dark:text-slate-500 hover:text-tawny-port dark:hover:text-tawny-port transition-colors">
                     {selectedIds.includes(issue.id) ? <CheckSquare size={20} className="text-tawny-port" /> : <Square size={20} />}
                   </button>
                 </td>
                 <td className="px-6 py-4">
-                  <div className="font-medium text-erp-black dark:text-white">{issue.title}</div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <div className="font-medium text-erp-black dark:text-white">{issue.title}</div>
+                    {overdue && (
+                      <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-red-100 text-red-600 dark:bg-red-900/40 dark:text-red-400 border border-red-200 dark:border-red-800/50">
+                        Overdue
+                      </span>
+                    )}
+                  </div>
                   {issue.delay_cause && issue.status === 'blocked' && (
                     <div className="text-xs text-tawny-port dark:text-red-400 mt-1 flex items-center gap-1">
                       <AlertCircle size={12} />
@@ -199,7 +220,8 @@ export const IssueList: React.FC<IssueListProps> = ({ issues, onEditIssue, onBul
                   {format(new Date(issue.created_at), 'MMM d, yyyy')}
                 </td>
               </tr>
-            ))}
+            );
+          })}
           </tbody>
         </table>
       </div>
