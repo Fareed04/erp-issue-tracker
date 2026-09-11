@@ -35,31 +35,45 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({ issueId, onUploadC
     const draw = () => {
       animationRef.current = requestAnimationFrame(draw);
       
-      analyser.getByteTimeDomainData(dataArray);
+      analyser.getByteFrequencyData(dataArray);
       
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       
-      ctx.lineWidth = 2;
-      ctx.strokeStyle = '#ef4444';
-      ctx.beginPath();
+      const barWidth = 3;
+      const gap = 2;
+      const numBars = Math.floor(canvas.width / (barWidth + gap));
+      const step = Math.max(1, Math.floor(bufferLength / numBars));
       
-      const sliceWidth = canvas.width * 1.0 / bufferLength;
       let x = 0;
       
-      for (let i = 0; i < bufferLength; i++) {
-        const v = dataArray[i] / 128.0;
-        const y = v * canvas.height / 2;
-        
-        if (i === 0) {
-          ctx.moveTo(x, y);
-        } else {
-          ctx.lineTo(x, y);
+      for (let i = 0; i < numBars; i++) {
+        let sum = 0;
+        for (let j = 0; j < step; j++) {
+          // Add safety check so we don't read out of bounds
+          const index = Math.min(i * step + j, bufferLength - 1);
+          sum += dataArray[index];
         }
-        x += sliceWidth;
+        const average = sum / step;
+        
+        // Map average to height (min 2px for visual structure)
+        const v = average / 255.0;
+        // Ease the amplitude so normal speaking stands out more
+        const barHeight = Math.max(2, Math.pow(v, 1.2) * canvas.height * 0.9);
+        
+        const y = (canvas.height - barHeight) / 2;
+        
+        ctx.fillStyle = '#ef4444'; // Tailwind red-500
+        
+        ctx.beginPath();
+        if (ctx.roundRect) {
+          ctx.roundRect(x, y, barWidth, barHeight, barWidth / 2);
+        } else {
+          ctx.rect(x, y, barWidth, barHeight);
+        }
+        ctx.fill();
+        
+        x += barWidth + gap;
       }
-      
-      ctx.lineTo(canvas.width, canvas.height / 2);
-      ctx.stroke();
     };
     
     draw();
