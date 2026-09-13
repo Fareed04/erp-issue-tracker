@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { Issue, IssueStatus } from '../types';
 import { motion } from 'motion/react';
 import { clsx } from 'clsx';
-import { AlertCircle, Clock, CheckCircle2, CircleDashed, LayoutGrid } from 'lucide-react';
+import { AlertCircle, Clock, CheckCircle2, CircleDashed, LayoutGrid, FileEdit } from 'lucide-react';
 import { Avatar } from './Avatar';
 import {
   DndContext,
@@ -24,6 +24,7 @@ interface BoardProps {
 }
 
 const COLUMNS: { id: IssueStatus; label: string; icon: any; color: string }[] = [
+  { id: 'draft', label: 'Draft', icon: FileEdit, color: 'text-slate-400' },
   { id: 'todo', label: 'To Do', icon: CircleDashed, color: 'text-slate-500' },
   { id: 'in_progress', label: 'In Progress', icon: Clock, color: 'text-peru-tan' },
   { id: 'blocked', label: 'Blocked', icon: AlertCircle, color: 'text-tawny-port' },

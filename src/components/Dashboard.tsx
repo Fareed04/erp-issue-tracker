@@ -24,6 +24,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ issues }) => {
       return acc;
     }, {} as Record<string, number>);
     return [
+      { name: 'Drafts', value: counts['draft'] || 0 },
       { name: 'To Do', value: counts['todo'] || 0 },
       { name: 'In Progress', value: counts['in_progress'] || 0 },
       { name: 'Blocked', value: counts['blocked'] || 0 },

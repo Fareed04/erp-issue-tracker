@@ -67,6 +67,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({ filters, onFilterChange, o
           className="w-full px-3 h-10 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-tawny-port outline-none bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-slate-100 text-sm"
         >
           <option value="">All Statuses</option>
+          <option value="draft">Draft</option>
           <option value="todo">To Do</option>
           <option value="in_progress">In Progress</option>
           <option value="blocked">Blocked</option>

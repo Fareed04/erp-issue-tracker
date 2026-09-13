@@ -1,5 +1,5 @@
 export type IssueType = 'task' | 'bug' | 'issue';
-export type IssueStatus = 'todo' | 'in_progress' | 'blocked' | 'done';
+export type IssueStatus = 'draft' | 'todo' | 'in_progress' | 'blocked' | 'done';
 export type IssuePriority = 'low' | 'medium' | 'high' | 'critical';
 
 export type UserRole = 'Admin' | 'Manager' | 'Developer';

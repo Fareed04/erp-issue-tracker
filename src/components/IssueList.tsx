@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Issue, IssueStatus, IssuePriority, BulkUpdatePayload } from '../types';
 import { format } from 'date-fns';
 import { clsx } from 'clsx';
-import { AlertCircle, CheckCircle2, Clock, CircleDashed, CheckSquare, Square } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Clock, CircleDashed, CheckSquare, Square, FileEdit } from 'lucide-react';
 import { Avatar } from './Avatar';
 
 const isOverdue = (issue: Issue) => {
@@ -74,7 +74,7 @@ export const IssueList: React.FC<IssueListProps> = ({ issues, onEditIssue, onBul
             
             <div className="flex flex-wrap items-center gap-2 bg-white/10 p-1 rounded-lg w-full sm:w-auto">
               <span className="text-xs font-medium uppercase tracking-wider px-2 opacity-70 w-full sm:w-auto">Status</span>
-              {(['todo', 'in_progress', 'blocked', 'done'] as IssueStatus[]).map(status => (
+              {(['draft', 'todo', 'in_progress', 'blocked', 'done'] as IssueStatus[]).map(status => (
                 <button
                   key={status}
                   disabled={isUpdating}
@@ -175,6 +175,7 @@ export const IssueList: React.FC<IssueListProps> = ({ issues, onEditIssue, onBul
                 </td>
                 <td className="px-6 py-4">
                   <div className="flex items-center gap-2">
+                    {issue.status === 'draft' && <FileEdit size={16} className="text-slate-400 dark:text-slate-500" />}
                     {issue.status === 'todo' && <CircleDashed size={16} className="text-slate-500 dark:text-slate-400" />}
                     {issue.status === 'in_progress' && <Clock size={16} className="text-peru-tan dark:text-amber-500" />}
                     {issue.status === 'blocked' && <AlertCircle size={16} className="text-tawny-port dark:text-red-500" />}

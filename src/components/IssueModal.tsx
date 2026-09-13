@@ -140,6 +140,20 @@ export const IssueModal: React.FC<IssueModalProps> = ({ isOpen, onClose, onSave,
     onSave(payload);
   };
 
+  const handleSaveDraft = () => {
+    const form = document.getElementById('issue-form') as HTMLFormElement;
+    if (form && form.checkValidity()) {
+      const payload = {
+        ...formData,
+        status: 'draft',
+        links: formData.links ? formData.links.filter((l: any) => l.targetIssueId) : []
+      };
+      onSave(payload);
+    } else if (form) {
+      form.reportValidity();
+    }
+  };
+
   const handleDelete = () => {
     if (issue && onDelete) {
       onDelete(issue.id);
@@ -438,6 +452,7 @@ export const IssueModal: React.FC<IssueModalProps> = ({ isOpen, onClose, onSave,
                     onChange={e => setFormData({ ...formData, status: e.target.value as IssueStatus })}
                     className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-tawny-port focus:border-tawny-port outline-none transition-all bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100"
                   >
+                    <option value="draft">Draft</option>
                     <option value="todo">To Do</option>
                     <option value="in_progress">In Progress</option>
                     <option value="blocked">Blocked</option>
@@ -691,14 +706,23 @@ export const IssueModal: React.FC<IssueModalProps> = ({ isOpen, onClose, onSave,
               {activeTab === 'details' && isEditing ? 'Cancel' : 'Close'}
             </button>
             {activeTab === 'details' && isEditing && canEdit && (
-              <button
-                type="submit"
-                form="issue-form"
-                className="flex items-center gap-2 px-6 py-2 bg-tawny-port hover:bg-tawny-port/90 text-white rounded-lg transition-colors font-medium shadow-sm"
-              >
-                <Save size={18} />
-                Save
-              </button>
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={handleSaveDraft}
+                  className="px-4 py-2 text-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600 rounded-lg transition-colors font-medium shadow-sm"
+                >
+                  Save as Draft
+                </button>
+                <button
+                  type="submit"
+                  form="issue-form"
+                  className="flex items-center gap-2 px-6 py-2 bg-tawny-port hover:bg-tawny-port/90 text-white rounded-lg transition-colors font-medium shadow-sm"
+                >
+                  <Save size={18} />
+                  Save
+                </button>
+              </div>
             )}
             {activeTab === 'details' && !isEditing && issue && canEdit && (
               <button
