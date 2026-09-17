@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Issue, CreateIssuePayload, IssueType, IssueStatus, IssuePriority, UserProfile, ActivityLog } from '../types';
-import { X, Save, Trash2, User, Clock, Edit3 } from 'lucide-react';
+import { X, Save, Trash2, User, Clock, Edit3, Mic } from 'lucide-react';
 import * as api from '../services/api';
 import { Avatar } from './Avatar';
 import { AudioRecorder } from './AudioRecorder';
@@ -27,6 +27,8 @@ export const IssueModal: React.FC<IssueModalProps> = ({ isOpen, onClose, onSave,
   const [newComment, setNewComment] = useState('');
   const [activeTab, setActiveTab] = useState<'details' | 'activity' | 'comments'>('details');
   const [isEditing, setIsEditing] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+  const recognitionRef = React.useRef<any>(null);
   const [formData, setFormData] = useState<any>({
     title: '',
     description: '',
@@ -111,6 +113,53 @@ export const IssueModal: React.FC<IssueModalProps> = ({ isOpen, onClose, onSave,
   }, [issue, isOpen, defaultType]);
 
   if (!isOpen) return null;
+
+  const toggleListening = () => {
+    if (isListening) {
+      recognitionRef.current?.stop();
+      setIsListening(false);
+      return;
+    }
+
+    const SpeechRecognition = window.SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert("Speech recognition is not supported in this browser.");
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.continuous = true;
+    recognition.interimResults = true;
+
+    recognition.onresult = (event: any) => {
+      let finalTranscript = '';
+      for (let i = event.resultIndex; i < event.results.length; ++i) {
+        if (event.results[i].isFinal) {
+          finalTranscript += event.results[i][0].transcript;
+        }
+      }
+      
+      if (finalTranscript) {
+        setFormData((prev: any) => ({ 
+          ...prev, 
+          description: prev.description ? prev.description + ' ' + finalTranscript.trim() : finalTranscript.trim() 
+        }));
+      }
+    };
+
+    recognition.onerror = (event: any) => {
+      console.error("Speech recognition error", event.error);
+      setIsListening(false);
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+    };
+
+    recognition.start();
+    setIsListening(true);
+    recognitionRef.current = recognition;
+  };
 
   const handleAssigneeChange = (uid: string) => {
     const selectedUser = users.find(u => u.uid === uid);
@@ -408,8 +457,22 @@ export const IssueModal: React.FC<IssueModalProps> = ({ isOpen, onClose, onSave,
                 />
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Description</label>
+              <div className="relative">
+                <div className="flex justify-between items-center mb-1">
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Description</label>
+                  <button
+                    type="button"
+                    onClick={toggleListening}
+                    className={`flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md transition-colors ${
+                      isListening 
+                        ? 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400 animate-pulse' 
+                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700'
+                    }`}
+                  >
+                    <Mic size={14} />
+                    {isListening ? 'Listening...' : 'Voice to Text'}
+                  </button>
+                </div>
                 <textarea
                   rows={4}
                   value={formData.description}
