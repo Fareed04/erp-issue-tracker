@@ -147,6 +147,31 @@ export default function App() {
                 type: 'warning',
                 linkToIssueId: issue.id,
               });
+
+              // Send deadline reminder email
+              const recipientEmail = userProfile.notificationEmail || userProfile.email;
+              const emailEnabled = userProfile.preferences?.emailNotificationsEnabled !== false;
+              const emailOnDeadline = userProfile.preferences?.emailOnDeadline !== false;
+              if (recipientEmail && emailEnabled && emailOnDeadline) {
+                api.sendEmail({
+                  to: recipientEmail,
+                  recipientName: userProfile.displayName,
+                  subject: `[TaskFlow] Reminder: Deadline approaching for "${issue.title}"`,
+                  type: 'deadline',
+                  issueId: issue.id,
+                  issueTitle: issue.title,
+                  details: {
+                    actionText: `Task "${issue.title}" has an approaching deadline (${dueDate.toLocaleDateString()}).`,
+                    taskTitle: issue.title,
+                    priority: issue.priority,
+                    status: issue.status,
+                    dueDate: issue.dueDate || undefined,
+                    description: issue.description || undefined,
+                    actorName: 'TaskFlow Reminder',
+                  },
+                }).catch(e => console.error('Failed to send deadline email:', e));
+              }
+
               // Mark as notified
               await api.updateIssue(issue.id, { deadlineNotified: true }, null);
             } catch (err) {

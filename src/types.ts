@@ -40,17 +40,38 @@ export interface NotificationPreferences {
   notifyOnStatusChange: boolean;
   notifyOnComment: boolean;
   notifyOnDeadline: boolean;
+  emailNotificationsEnabled?: boolean;
+  emailOnAssign?: boolean;
+  emailOnStatusChange?: boolean;
+  emailOnComment?: boolean;
+  emailOnDeadline?: boolean;
 }
 
 export interface UserProfile {
   uid: string;
   displayName: string;
   email: string;
+  notificationEmail?: string | null;
   photoURL: string | null;
   role?: UserRole;
   preferences?: NotificationPreferences;
   tutorialCompleted?: boolean;
   tutorialStep?: number;
+}
+
+export interface EmailLogEntry {
+  id: string;
+  to: string;
+  recipientName?: string;
+  subject: string;
+  previewText?: string;
+  type: 'assignment' | 'status_change' | 'comment' | 'deadline' | 'test';
+  issueId?: string;
+  issueTitle?: string;
+  sentAt: string;
+  timestamp?: string;
+  previewUrl?: string | null;
+  status: 'sent' | 'simulated' | 'failed';
 }
 
 export interface ActivityLog {

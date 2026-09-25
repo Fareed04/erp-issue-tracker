@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { UserProfile, UserRole } from '../types';
 import * as api from '../services/api';
 import { Avatar } from './Avatar';
+import { Mail } from 'lucide-react';
 
 interface UsersManagementProps {
   currentUserProfile: UserProfile;
@@ -83,7 +84,16 @@ export const UsersManagement: React.FC<UsersManagementProps> = ({ currentUserPro
                         <span className="font-medium text-slate-900 dark:text-slate-100">{u.displayName}</span>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-slate-500">{u.email}</td>
+                    <td className="px-6 py-4">
+                      <div className="flex flex-col">
+                        <span className="text-slate-700 dark:text-slate-300 font-mono text-xs">{u.email}</span>
+                        {u.notificationEmail && u.notificationEmail !== u.email && (
+                          <span className="text-[11px] text-tawny-port font-medium flex items-center gap-1 mt-0.5" title="Notifications routed to this email">
+                            <Mail size={11} /> {u.notificationEmail}
+                          </span>
+                        )}
+                      </div>
+                    </td>
                     <td className="px-6 py-4">
                       <select
                         value={u.role || 'Developer'}

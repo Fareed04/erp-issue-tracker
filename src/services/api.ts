@@ -15,6 +15,9 @@ import {
 } from 'firebase/firestore';
 import { db } from '../firebase';
 import { Issue, CreateIssuePayload, BulkUpdatePayload, UserProfile, ActivityLog, Comment, AppNotification } from '../types';
+import { sendEmail, sendTestEmail, fetchEmailLogs } from './email';
+
+export { sendEmail, sendTestEmail, fetchEmailLogs };
 
 const ISSUES_COLLECTION = 'issues';
 const USERS_COLLECTION = 'users';
@@ -93,6 +96,29 @@ export const addComment = async (issueId: string, user: any, text: string) => {
           type: 'info',
           linkToIssueId: issueId,
         });
+      }
+
+      // Email notification
+      const recipientEmail = profile?.notificationEmail || profile?.email;
+      const emailEnabled = profile?.preferences?.emailNotificationsEnabled !== false;
+      const emailOnComment = profile?.preferences?.emailOnComment !== false;
+      if (recipientEmail && emailEnabled && emailOnComment) {
+        sendEmail({
+          to: recipientEmail,
+          recipientName: profile?.displayName,
+          subject: `[TaskFlow] New comment on: ${issue.title}`,
+          type: 'comment',
+          issueId,
+          issueTitle: issue.title,
+          details: {
+            actionText: `${user.displayName || 'A team member'} added a comment on task "${issue.title}".`,
+            taskTitle: issue.title,
+            priority: issue.priority,
+            status: issue.status,
+            commentText: text,
+            actorName: user.displayName || 'Team Member',
+          },
+        }).catch(err => console.error('Failed to send comment email:', err));
       }
     }
   }
@@ -179,6 +205,30 @@ export const createIssue = async (payload: CreateIssuePayload, user: any): Promi
         linkToIssueId: docRef.id,
       });
     }
+
+    // Email notification on assignment
+    const recipientEmail = profile?.notificationEmail || profile?.email;
+    const emailEnabled = profile?.preferences?.emailNotificationsEnabled !== false;
+    const emailOnAssign = profile?.preferences?.emailOnAssign !== false && profile?.preferences?.notifyOnAssign !== false;
+    if (recipientEmail && emailEnabled && emailOnAssign) {
+      sendEmail({
+        to: recipientEmail,
+        recipientName: profile?.displayName,
+        subject: `[TaskFlow] You were assigned to: ${payload.title}`,
+        type: 'assignment',
+        issueId: docRef.id,
+        issueTitle: payload.title,
+        details: {
+          actionText: `${user?.displayName || 'A team member'} assigned you to a new task.`,
+          taskTitle: payload.title,
+          priority: payload.priority,
+          status: payload.status,
+          dueDate: payload.dueDate || undefined,
+          description: payload.description || undefined,
+          actorName: user?.displayName || 'Team Member',
+        },
+      }).catch(err => console.error('Failed to send assignment email:', err));
+    }
   }
   
   return { id: docRef.id, ...data } as Issue;
@@ -237,6 +287,30 @@ export const updateIssue = async (id: string, payload: Partial<Issue>, user: any
           linkToIssueId: id,
         });
       }
+
+      // Email notification on assignment update
+      const recipientEmail = profile?.notificationEmail || profile?.email;
+      const emailEnabled = profile?.preferences?.emailNotificationsEnabled !== false;
+      const emailOnAssign = profile?.preferences?.emailOnAssign !== false && profile?.preferences?.notifyOnAssign !== false;
+      if (recipientEmail && emailEnabled && emailOnAssign) {
+        sendEmail({
+          to: recipientEmail,
+          recipientName: profile?.displayName,
+          subject: `[TaskFlow] You were assigned to: ${title}`,
+          type: 'assignment',
+          issueId: id,
+          issueTitle: title,
+          details: {
+            actionText: `${user.displayName || 'A team member'} assigned you to this task.`,
+            taskTitle: title,
+            priority: payload.priority || existingData.priority,
+            status: payload.status || existingData.status,
+            dueDate: (payload.dueDate !== undefined ? payload.dueDate : existingData.dueDate) || undefined,
+            description: (payload.description !== undefined ? payload.description : existingData.description) || undefined,
+            actorName: user.displayName || 'Team Member',
+          },
+        }).catch(err => console.error('Failed to send assignment update email:', err));
+      }
     }
     
     if (statusChanged) {
@@ -254,6 +328,29 @@ export const updateIssue = async (id: string, payload: Partial<Issue>, user: any
             type: 'info',
             linkToIssueId: id,
           });
+        }
+
+        // Email notification on status change
+        const recipientEmail = profile?.notificationEmail || profile?.email;
+        const emailEnabled = profile?.preferences?.emailNotificationsEnabled !== false;
+        const emailOnStatusChange = profile?.preferences?.emailOnStatusChange !== false;
+        if (recipientEmail && emailEnabled && emailOnStatusChange) {
+          sendEmail({
+            to: recipientEmail,
+            recipientName: profile?.displayName,
+            subject: `[TaskFlow] Status updated for: ${title}`,
+            type: 'status_change',
+            issueId: id,
+            issueTitle: title,
+            details: {
+              actionText: `${user.displayName || 'A team member'} updated the status to "${payload.status?.replace('_', ' ')}".`,
+              taskTitle: title,
+              priority: payload.priority || existingData.priority,
+              status: payload.status,
+              dueDate: (payload.dueDate !== undefined ? payload.dueDate : existingData.dueDate) || undefined,
+              actorName: user.displayName || 'Team Member',
+            },
+          }).catch(err => console.error('Failed to send status change email:', err));
         }
       }
     }
@@ -334,7 +431,13 @@ export const getUserProfile = async (uid: string): Promise<UserProfile | null> =
 
 export const updateUserProfile = async (profile: UserProfile): Promise<void> => {
   const docRef = doc(db, USERS_COLLECTION, profile.uid);
-  await setDoc(docRef, profile, { merge: true });
+  const cleanData: any = { ...profile };
+  Object.keys(cleanData).forEach(key => {
+    if (cleanData[key] === undefined) {
+      delete cleanData[key];
+    }
+  });
+  await setDoc(docRef, cleanData, { merge: true });
 };
 
 export const getAllUserProfiles = async (): Promise<UserProfile[]> => {
