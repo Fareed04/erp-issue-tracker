@@ -4,7 +4,7 @@ export type IssuePriority = 'low' | 'medium' | 'high' | 'critical';
 
 export type UserRole = 'Admin' | 'Manager' | 'Developer';
 
-export type IssueLinkType = 'blocks' | 'is_blocked_by' | 'relates_to';
+export type IssueLinkType = 'blocks' | 'blocked_by' | 'is_blocked_by' | 'relates_to';
 
 export interface IssueLink {
   id: string;

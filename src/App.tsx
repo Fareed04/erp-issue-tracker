@@ -464,6 +464,7 @@ export default function App() {
               {currentView === 'board' && (
                 <Board 
                   issues={filteredIssues} 
+                  allIssues={issues}
                   onUpdateStatus={handleUpdateStatus} 
                   onUpdateIssueField={handleUpdateIssueField}
                   onEditIssue={openEditIssueModal} 
@@ -472,6 +473,7 @@ export default function App() {
               {currentView === 'list' && (
                 <IssueList 
                   issues={filteredIssues} 
+                  allIssues={issues}
                   onEditIssue={openEditIssueModal} 
                   onBulkUpdate={handleBulkUpdate}
                 />
@@ -493,6 +495,9 @@ export default function App() {
         }}
         onSave={handleSaveIssue}
         onDelete={handleDeleteIssue}
+        onSelectIssue={(target) => {
+          setEditingIssue(target);
+        }}
         issue={editingIssue}
         userProfile={userProfile}
         allIssues={issues}

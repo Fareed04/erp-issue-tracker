@@ -1,25 +1,28 @@
 import React, { useState, useEffect } from 'react';
 import { Issue, CreateIssuePayload, IssueType, IssueStatus, IssuePriority, UserProfile, ActivityLog } from '../types';
-import { X, Save, Trash2, User, Clock, Edit3, Mic } from 'lucide-react';
+import { X, Save, Trash2, User, Clock, Edit3, Mic, Link2, Lock, ArrowRight, CheckCircle2, Plus } from 'lucide-react';
+import { clsx } from 'clsx';
 import * as api from '../services/api';
 import { Avatar } from './Avatar';
 import { AudioRecorder } from './AudioRecorder';
 import { AudioPlayer } from './AudioPlayer';
 import { formatDistanceToNow } from 'date-fns';
 import { auth } from '../firebase';
+import { resolveDependencies } from '../utils/dependencies';
 
 interface IssueModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (payload: CreateIssuePayload) => void;
   onDelete?: (id: string) => void;
+  onSelectIssue?: (issue: Issue) => void;
   issue?: Issue | null;
   userProfile?: UserProfile | null;
   allIssues?: Issue[];
   defaultType?: IssueType;
 }
 
-export const IssueModal: React.FC<IssueModalProps> = ({ isOpen, onClose, onSave, onDelete, issue, userProfile, allIssues = [], defaultType }) => {
+export const IssueModal: React.FC<IssueModalProps> = ({ isOpen, onClose, onSave, onDelete, onSelectIssue, issue, userProfile, allIssues = [], defaultType }) => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [activities, setActivities] = useState<ActivityLog[]>([]);
@@ -361,51 +364,212 @@ export const IssueModal: React.FC<IssueModalProps> = ({ isOpen, onClose, onSave,
                 )}
 
                 {(() => {
-                  const outgoingLinks = issue.links || [];
-                  const incomingLinks = allIssues.filter(i => i.links?.some(l => l.targetIssueId === issue.id)).flatMap(i => 
-                    i.links!.filter(l => l.targetIssueId === issue.id).map(l => ({
-                      id: `${i.id}-${l.id}`,
-                      type: l.type === 'blocks' ? 'is_blocked_by' : l.type === 'is_blocked_by' ? 'blocks' : 'relates_to',
-                      targetIssueId: i.id
-                    }))
-                  );
-                  
-                  // Deduplicate links by targetIssueId just in case
-                  const allLinksMap = new Map();
-                  [...outgoingLinks, ...incomingLinks].forEach(l => {
-                    if (!allLinksMap.has(l.targetIssueId)) {
-                      allLinksMap.set(l.targetIssueId, l);
-                    }
-                  });
-                  const allLinks = Array.from(allLinksMap.values());
-
-                  if (allLinks.length === 0) return null;
+                  if (!issue) return null;
+                  const deps = resolveDependencies(issue, allIssues);
 
                   return (
-                    <div className="pt-6 mt-6 border-t border-slate-200 dark:border-slate-700/50">
-                      <h3 className="text-sm font-medium text-slate-800 dark:text-slate-200 mb-4">Related Issues</h3>
-                      <div className="space-y-2">
-                        {allLinks.map((link: any) => {
-                          const targetIssue = allIssues.find(i => i.id === link.targetIssueId);
-                          if (!targetIssue) return null;
-                          const label = link.type === 'blocks' ? 'Blocks' : link.type === 'is_blocked_by' ? 'Is Blocked By' : 'Relates To';
-                          const color = link.type === 'blocks' ? 'text-amber-600 bg-amber-50 border-amber-200 dark:bg-amber-900/20 dark:border-amber-800' :
-                                        link.type === 'is_blocked_by' ? 'text-red-600 bg-red-50 border-red-200 dark:bg-red-900/20 dark:border-red-800' :
-                                        'text-blue-600 bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:border-blue-800';
-                          return (
-                            <div key={link.id} className="flex items-center justify-between bg-slate-50 dark:bg-slate-900/50 p-3 rounded-lg border border-slate-200 dark:border-slate-700/50">
-                              <div className="flex gap-3 items-center min-w-0">
-                                <span className={`px-2 py-0.5 text-xs font-semibold rounded border ${color} whitespace-nowrap`}>
-                                  {label}
-                                </span>
-                                <span className="text-sm font-medium text-slate-700 dark:text-slate-300 truncate">
-                                  {targetIssue.title}
-                                </span>
+                    <div className="pt-6 mt-6 border-t border-slate-200 dark:border-slate-700/50 space-y-4">
+                      <div className="flex items-center justify-between">
+                        <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-2">
+                          <Link2 size={16} className="text-slate-500" />
+                          Dependencies & Relationships
+                          {deps.all.length > 0 && (
+                            <span className="text-xs px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 font-normal">
+                              {deps.all.length}
+                            </span>
+                          )}
+                        </h3>
+                        {canEdit && (
+                          <button
+                            type="button"
+                            onClick={() => setIsEditing(true)}
+                            className="text-xs text-tawny-port dark:text-red-400 hover:underline flex items-center gap-1 font-medium"
+                          >
+                            <Edit3 size={12} />
+                            Manage Dependencies
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Active Blocker Alert Banner */}
+                      {deps.activeBlockersCount > 0 && (
+                        <div className="bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900/50 p-3 rounded-lg flex items-start gap-2.5">
+                          <Lock size={16} className="text-red-600 dark:text-red-400 shrink-0 mt-0.5" />
+                          <div>
+                            <span className="text-xs font-bold text-red-900 dark:text-red-300">
+                              Work is blocked by {deps.activeBlockersCount} unresolved {deps.activeBlockersCount === 1 ? 'task' : 'tasks'}
+                            </span>
+                            <p className="text-xs text-red-700 dark:text-red-400 mt-0.5">
+                              The blocking issue(s) listed below must be completed before progress can continue.
+                            </p>
+                          </div>
+                        </div>
+                      )}
+
+                      {deps.hasBlockersResolved && (
+                        <div className="bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-900/50 p-2.5 rounded-lg flex items-center gap-2 text-xs text-emerald-800 dark:text-emerald-300 font-medium">
+                          <CheckCircle2 size={15} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+                          <span>All prerequisite blockers have been resolved!</span>
+                        </div>
+                      )}
+
+                      {deps.all.length === 0 ? (
+                        <div className="bg-slate-50 dark:bg-slate-900/40 border border-dashed border-slate-200 dark:border-slate-700/60 rounded-lg p-4 text-center">
+                          <p className="text-xs text-slate-500 dark:text-slate-400 mb-2">No dependencies or related issues linked yet.</p>
+                          {canEdit && (
+                            <button
+                              type="button"
+                              onClick={() => setIsEditing(true)}
+                              className="text-xs text-tawny-port hover:text-peru-tan font-medium inline-flex items-center gap-1 transition-colors"
+                            >
+                              <Plus size={12} /> Add Dependency
+                            </button>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="space-y-4">
+                          {/* Blocked By */}
+                          {deps.blockedBy.length > 0 && (
+                            <div>
+                              <div className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2 flex items-center gap-1.5">
+                                <Lock size={13} className="text-red-500" />
+                                <span>Blocked By ({deps.blockedBy.length})</span>
+                              </div>
+                              <div className="space-y-2">
+                                {deps.blockedBy.map(dep => {
+                                  const target = dep.targetIssue;
+                                  const isDone = target.status === 'done';
+                                  return (
+                                    <div
+                                      key={dep.id}
+                                      onClick={() => onSelectIssue && onSelectIssue(target)}
+                                      className={clsx(
+                                        "flex items-center justify-between p-2.5 rounded-lg border text-sm transition-all",
+                                        onSelectIssue && "cursor-pointer hover:border-slate-400 dark:hover:border-slate-500",
+                                        isDone
+                                          ? "bg-slate-50/50 dark:bg-slate-900/30 border-slate-200 dark:border-slate-800 opacity-80"
+                                          : "bg-red-50/40 dark:bg-red-950/20 border-red-200 dark:border-red-900/40"
+                                      )}
+                                    >
+                                      <div className="flex items-center gap-2.5 min-w-0">
+                                        <span className={clsx(
+                                          "px-2 py-0.5 text-[10px] font-bold rounded uppercase tracking-wider shrink-0",
+                                          isDone
+                                            ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300"
+                                            : "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300"
+                                        )}>
+                                          {isDone ? '✓ Resolved' : 'Active Blocker'}
+                                        </span>
+                                        <span className={clsx(
+                                          "font-medium text-slate-800 dark:text-slate-200 truncate text-xs sm:text-sm",
+                                          isDone && "line-through text-slate-500"
+                                        )}>
+                                          {target.title}
+                                        </span>
+                                      </div>
+                                      <div className="flex items-center gap-2 shrink-0 ml-2">
+                                        <span className="text-[11px] text-slate-500 dark:text-slate-400 capitalize px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800">
+                                          {target.status.replace('_', ' ')}
+                                        </span>
+                                        {target.assigneeName && (
+                                          <Avatar src={target.assigneePhoto} name={target.assigneeName} size="sm" className="w-5 h-5 text-[10px]" />
+                                        )}
+                                        {onSelectIssue && <ArrowRight size={13} className="text-slate-400" />}
+                                      </div>
+                                    </div>
+                                  );
+                                })}
                               </div>
                             </div>
-                          );
-                        })}
-                      </div>
+                          )}
+
+                          {/* Blocks */}
+                          {deps.blocks.length > 0 && (
+                            <div>
+                              <div className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2 flex items-center gap-1.5">
+                                <ArrowRight size={13} className="text-amber-500" />
+                                <span>Blocks ({deps.blocks.length})</span>
+                              </div>
+                              <div className="space-y-2">
+                                {deps.blocks.map(dep => {
+                                  const target = dep.targetIssue;
+                                  return (
+                                    <div
+                                      key={dep.id}
+                                      onClick={() => onSelectIssue && onSelectIssue(target)}
+                                      className={clsx(
+                                        "flex items-center justify-between p-2.5 rounded-lg border text-sm transition-all bg-amber-50/30 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900/40",
+                                        onSelectIssue && "cursor-pointer hover:border-amber-400"
+                                      )}
+                                    >
+                                      <div className="flex items-center gap-2.5 min-w-0">
+                                        <span className="px-2 py-0.5 text-[10px] font-bold rounded uppercase tracking-wider bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300 shrink-0">
+                                          Blocks
+                                        </span>
+                                        <span className="font-medium text-slate-800 dark:text-slate-200 truncate text-xs sm:text-sm">
+                                          {target.title}
+                                        </span>
+                                      </div>
+                                      <div className="flex items-center gap-2 shrink-0 ml-2">
+                                        <span className="text-[11px] text-slate-500 dark:text-slate-400 capitalize px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800">
+                                          {target.status.replace('_', ' ')}
+                                        </span>
+                                        {target.assigneeName && (
+                                          <Avatar src={target.assigneePhoto} name={target.assigneeName} size="sm" className="w-5 h-5 text-[10px]" />
+                                        )}
+                                        {onSelectIssue && <ArrowRight size={13} className="text-slate-400" />}
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Relates To */}
+                          {deps.relatesTo.length > 0 && (
+                            <div>
+                              <div className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2 flex items-center gap-1.5">
+                                <Link2 size={13} className="text-blue-500" />
+                                <span>Relates To ({deps.relatesTo.length})</span>
+                              </div>
+                              <div className="space-y-2">
+                                {deps.relatesTo.map(dep => {
+                                  const target = dep.targetIssue;
+                                  return (
+                                    <div
+                                      key={dep.id}
+                                      onClick={() => onSelectIssue && onSelectIssue(target)}
+                                      className={clsx(
+                                        "flex items-center justify-between p-2.5 rounded-lg border text-sm transition-all bg-blue-50/30 dark:bg-blue-950/20 border-blue-200 dark:border-blue-900/40",
+                                        onSelectIssue && "cursor-pointer hover:border-blue-400"
+                                      )}
+                                    >
+                                      <div className="flex items-center gap-2.5 min-w-0">
+                                        <span className="px-2 py-0.5 text-[10px] font-bold rounded uppercase tracking-wider bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300 shrink-0">
+                                          Related
+                                        </span>
+                                        <span className="font-medium text-slate-800 dark:text-slate-200 truncate text-xs sm:text-sm">
+                                          {target.title}
+                                        </span>
+                                      </div>
+                                      <div className="flex items-center gap-2 shrink-0 ml-2">
+                                        <span className="text-[11px] text-slate-500 dark:text-slate-400 capitalize px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800">
+                                          {target.status.replace('_', ' ')}
+                                        </span>
+                                        {target.assigneeName && (
+                                          <Avatar src={target.assigneePhoto} name={target.assigneeName} size="sm" className="w-5 h-5 text-[10px]" />
+                                        )}
+                                        {onSelectIssue && <ArrowRight size={13} className="text-slate-400" />}
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   );
                 })()}
@@ -579,60 +743,110 @@ export const IssueModal: React.FC<IssueModalProps> = ({ isOpen, onClose, onSave,
               )}
 
               <div className="pt-4 border-t border-slate-200 dark:border-slate-700">
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Related Issues</label>
-                <div className="space-y-3 mb-4">
-                  {formData.links && formData.links.map((link: any, index: number) => (
-                    <div key={index} className="flex gap-2 items-center">
-                      <select
-                        value={link.type}
-                        onChange={(e) => {
-                          const newLinks = [...formData.links];
-                          newLinks[index].type = e.target.value;
-                          setFormData({ ...formData, links: newLinks });
-                        }}
-                        className="px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg outline-none bg-white dark:bg-slate-900 text-sm w-1/3"
-                      >
-                        <option value="relates_to">Relates To</option>
-                        <option value="blocks">Blocks</option>
-                        <option value="is_blocked_by">Is Blocked By</option>
-                      </select>
-                      <select
-                        value={link.targetIssueId}
-                        onChange={(e) => {
-                          const newLinks = [...formData.links];
-                          newLinks[index].targetIssueId = e.target.value;
-                          setFormData({ ...formData, links: newLinks });
-                        }}
-                        className="px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg outline-none bg-white dark:bg-slate-900 flex-1 text-sm"
-                      >
-                        <option value="">Select Issue...</option>
-                        {allIssues.filter(i => i.id !== issue?.id).map(i => (
-                          <option key={i.id} value={i.id}>[{i.type}] {i.title}</option>
-                        ))}
-                      </select>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const newLinks = formData.links.filter((_: any, i: number) => i !== index);
-                          setFormData({ ...formData, links: newLinks });
-                        }}
-                        className="p-2 text-slate-400 hover:text-red-500 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
-                  ))}
+                <div className="flex items-center justify-between mb-2">
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-800 dark:text-slate-200">
+                      Dependencies & Relationships
+                    </label>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      Link related tasks to track what blocks this work or what is blocked by it.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ 
+                      ...formData, 
+                      links: [...(formData.links || []), { id: Date.now().toString(), type: 'blocked_by', targetIssueId: '' }] 
+                    })}
+                    className="text-xs text-tawny-port hover:text-rose-700 dark:text-rose-400 font-semibold inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-tawny-port/10 hover:bg-tawny-port/20 dark:bg-rose-950/40 transition-colors"
+                  >
+                    <Plus size={14} /> Add Dependency
+                  </button>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setFormData({ 
-                    ...formData, 
-                    links: [...(formData.links || []), { id: Date.now().toString(), type: 'relates_to', targetIssueId: '' }] 
-                  })}
-                  className="text-sm text-tawny-port hover:text-peru-tan font-medium flex items-center gap-1 transition-colors"
-                >
-                  + Add Link
-                </button>
+
+                <div className="space-y-3 mb-4">
+                  {formData.links && formData.links.length > 0 ? (
+                    formData.links.map((link: any, index: number) => {
+                      const selectedTarget = allIssues.find(i => i.id === link.targetIssueId);
+                      return (
+                        <div key={link.id || index} className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-2">
+                          <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center">
+                            <select
+                              value={link.type === 'is_blocked_by' ? 'blocked_by' : link.type}
+                              onChange={(e) => {
+                                const newLinks = [...formData.links];
+                                newLinks[index].type = e.target.value;
+                                setFormData({ ...formData, links: newLinks });
+                              }}
+                              className="px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg outline-none bg-white dark:bg-slate-800 text-sm font-medium sm:w-48 text-slate-800 dark:text-slate-200"
+                            >
+                              <option value="blocked_by">🔒 Blocked By</option>
+                              <option value="blocks">⛔ Blocks</option>
+                              <option value="relates_to">🔗 Relates To</option>
+                            </select>
+
+                            <select
+                              value={link.targetIssueId}
+                              onChange={(e) => {
+                                const newLinks = [...formData.links];
+                                newLinks[index].targetIssueId = e.target.value;
+                                setFormData({ ...formData, links: newLinks });
+                              }}
+                              className="px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg outline-none bg-white dark:bg-slate-800 flex-1 text-sm text-slate-800 dark:text-slate-200"
+                            >
+                              <option value="">Select an issue...</option>
+                              {allIssues
+                                .filter(i => i.id !== issue?.id)
+                                .map(i => (
+                                  <option key={i.id} value={i.id}>
+                                    [{i.status.toUpperCase().replace('_', ' ')}] {i.title} {i.assigneeName ? `(${i.assigneeName})` : ''}
+                                  </option>
+                                ))}
+                            </select>
+
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const newLinks = formData.links.filter((_: any, i: number) => i !== index);
+                                setFormData({ ...formData, links: newLinks });
+                              }}
+                              className="p-2 text-slate-400 hover:text-red-500 rounded-lg hover:bg-slate-200/50 dark:hover:bg-slate-800 transition-colors self-end sm:self-center"
+                              title="Remove dependency"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
+
+                          {selectedTarget && (
+                            <div className="flex items-center gap-2 pt-1 text-xs text-slate-500 dark:text-slate-400">
+                              <span className="font-medium text-slate-600 dark:text-slate-300">Status:</span>
+                              <span className={clsx(
+                                "px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase",
+                                selectedTarget.status === 'done'
+                                  ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300"
+                                  : "bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300"
+                              )}>
+                                {selectedTarget.status.replace('_', ' ')}
+                              </span>
+                              <span className="font-medium text-slate-600 dark:text-slate-300 ml-2">Priority:</span>
+                              <span className="capitalize">{selectedTarget.priority}</span>
+                              {selectedTarget.assigneeName && (
+                                <>
+                                  <span className="font-medium text-slate-600 dark:text-slate-300 ml-2">Assignee:</span>
+                                  <span>{selectedTarget.assigneeName}</span>
+                                </>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <div className="text-center py-4 bg-slate-50 dark:bg-slate-900/30 rounded-xl border border-dashed border-slate-200 dark:border-slate-700/60">
+                      <p className="text-xs text-slate-400 dark:text-slate-500">No dependencies added yet.</p>
+                    </div>
+                  )}
+                </div>
               </div>
 
             </form>

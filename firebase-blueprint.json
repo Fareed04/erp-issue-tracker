@@ -25,6 +25,19 @@
         "assigneeUid": { "type": "string", "description": "UID of the assigned user." },
         "reporterUid": { "type": "string", "description": "UID of the user who reported the issue." },
         "delay_cause": { "type": "string", "description": "Reason for delay if blocked." },
+        "links": {
+          "type": "array",
+          "description": "Dependencies and links to other issues.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string" },
+              "type": { "type": "string", "enum": ["blocks", "blocked_by", "is_blocked_by", "relates_to"] },
+              "targetIssueId": { "type": "string" }
+            },
+            "required": ["id", "type", "targetIssueId"]
+          }
+        },
         "created_at": { "type": "string", "format": "date-time" },
         "updated_at": { "type": "string", "format": "date-time" }
       },

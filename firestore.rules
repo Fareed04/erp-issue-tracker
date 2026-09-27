@@ -26,7 +26,8 @@ service cloud.firestore {
              data.type in ['task', 'bug', 'issue'] &&
              data.status in ['draft', 'todo', 'in_progress', 'blocked', 'done'] &&
              data.priority in ['low', 'medium', 'high', 'critical'] &&
-             data.reporterUid is string;
+             data.reporterUid is string &&
+             (!('links' in data) || data.links == null || data.links is list);
     }
 
     // ===============================================================

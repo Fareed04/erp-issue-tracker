@@ -269,6 +269,7 @@ export const updateIssue = async (id: string, payload: Partial<Issue>, user: any
     if (payload.description !== undefined && payload.description !== existingData.description) changes.push(`description`);
     if (payload.type && payload.type !== existingData.type) changes.push(`type to '${payload.type}'`);
     if (payload.dueDate !== undefined && payload.dueDate !== existingData.dueDate) changes.push(`due date`);
+    if (payload.links !== undefined && JSON.stringify(payload.links) !== JSON.stringify(existingData.links)) changes.push(`dependencies`);
     
     if (changes.length > 0) {
       await logActivity(id, user, 'updated', `Updated ${changes.join(', ')}`);

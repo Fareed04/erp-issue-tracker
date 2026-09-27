@@ -2,8 +2,9 @@ import React, { useState, useMemo } from 'react';
 import { Issue, IssueStatus } from '../types';
 import { motion } from 'motion/react';
 import { clsx } from 'clsx';
-import { AlertCircle, Clock, CheckCircle2, CircleDashed, LayoutGrid, FileEdit } from 'lucide-react';
+import { AlertCircle, Clock, CheckCircle2, CircleDashed, LayoutGrid, FileEdit, Lock, ArrowRight } from 'lucide-react';
 import { Avatar } from './Avatar';
+import { resolveDependencies } from '../utils/dependencies';
 import {
   DndContext,
   DragOverlay,
@@ -18,6 +19,7 @@ import { createPortal } from 'react-dom';
 
 interface BoardProps {
   issues: Issue[];
+  allIssues?: Issue[];
   onUpdateStatus: (id: string, status: IssueStatus) => void;
   onUpdateIssueField?: (id: string, updates: Partial<Issue>) => void;
   onEditIssue: (issue: Issue) => void;
@@ -31,13 +33,16 @@ const COLUMNS: { id: IssueStatus; label: string; icon: any; color: string }[] = 
   { id: 'done', label: 'Done', icon: CheckCircle2, color: 'text-emerald-500' },
 ];
 
-function IssueCard({ issue, onClick, isOverlay }: { issue: Issue; onClick?: () => void; isOverlay?: boolean }) {
+function IssueCard({ issue, allIssues = [], onClick, isOverlay }: { issue: Issue; allIssues?: Issue[]; onClick?: () => void; isOverlay?: boolean }) {
+  const deps = resolveDependencies(issue, allIssues);
+
   return (
     <div
       onClick={onClick}
       className={clsx(
         "bg-white dark:bg-slate-800 p-4 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 cursor-pointer hover:shadow-md transition-shadow group relative",
-        isOverlay && "shadow-xl ring-2 ring-peru-tan rotate-2 opacity-90 cursor-grabbing"
+        isOverlay && "shadow-xl ring-2 ring-peru-tan rotate-2 opacity-90 cursor-grabbing",
+        deps.activeBlockersCount > 0 && "border-l-4 border-l-rose-500"
       )}
     >
       <div className="flex justify-between items-start mb-2">
@@ -62,9 +67,39 @@ function IssueCard({ issue, onClick, isOverlay }: { issue: Issue; onClick?: () =
       <h4 className="font-medium text-erp-black dark:text-white mb-2 line-clamp-2">{issue.title}</h4>
       
       {issue.status === 'blocked' && issue.delay_cause && (
-        <div className="mt-3 p-2 bg-amber-50 dark:bg-amber-900/20 rounded text-xs text-amber-800 dark:text-amber-400 border border-amber-100 dark:border-amber-900/50 flex items-start gap-1.5">
+        <div className="mt-2.5 p-2 bg-amber-50 dark:bg-amber-900/20 rounded text-xs text-amber-800 dark:text-amber-400 border border-amber-100 dark:border-amber-900/50 flex items-start gap-1.5">
           <AlertCircle size={14} className="shrink-0 mt-0.5" />
           <span className="line-clamp-2">{issue.delay_cause}</span>
+        </div>
+      )}
+
+      {/* Dependency Badges */}
+      {deps.activeBlockersCount > 0 && (
+        <div 
+          className="mt-2.5 px-2 py-1 bg-rose-50 dark:bg-rose-950/40 rounded-md border border-rose-200 dark:border-rose-900/50 text-[11px] text-rose-700 dark:text-rose-300 font-semibold flex items-center gap-1.5"
+          title={`Blocked by: ${deps.blockedBy.filter(b => b.isBlockerActive).map(b => b.targetIssue.title).join(', ')}`}
+        >
+          <Lock size={12} className="shrink-0 text-rose-600 dark:text-rose-400" />
+          <span className="truncate">
+            Blocked by: {deps.blockedBy.filter(b => b.isBlockerActive).map(b => b.targetIssue.title).join(', ')}
+          </span>
+        </div>
+      )}
+
+      {deps.hasBlockersResolved && (
+        <div className="mt-2 px-2 py-0.5 bg-emerald-50 dark:bg-emerald-950/30 rounded text-[11px] text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-900/40 flex items-center gap-1">
+          <CheckCircle2 size={11} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+          <span>Prerequisites resolved</span>
+        </div>
+      )}
+
+      {deps.blocks.length > 0 && (
+        <div 
+          className="mt-2 px-2 py-0.5 bg-amber-50 dark:bg-amber-950/30 rounded text-[11px] text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-900/40 flex items-center gap-1 font-medium"
+          title={`Blocks: ${deps.blocks.map(b => b.targetIssue.title).join(', ')}`}
+        >
+          <ArrowRight size={11} className="text-amber-600 dark:text-amber-400 shrink-0" />
+          <span className="truncate">Blocks: {deps.blocks.map(b => b.targetIssue.title).join(', ')}</span>
         </div>
       )}
 
@@ -84,7 +119,7 @@ function IssueCard({ issue, onClick, isOverlay }: { issue: Issue; onClick?: () =
   );
 }
 
-const DraggableIssue: React.FC<{ issue: Issue, onEditIssue: (i: Issue) => void }> = ({ issue, onEditIssue }) => {
+const DraggableIssue: React.FC<{ issue: Issue; allIssues?: Issue[]; onEditIssue: (i: Issue) => void }> = ({ issue, allIssues = [], onEditIssue }) => {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: issue.id,
     data: issue,
@@ -109,12 +144,12 @@ const DraggableIssue: React.FC<{ issue: Issue, onEditIssue: (i: Issue) => void }
       {...attributes}
       className="touch-none"
     >
-      <IssueCard issue={issue} onClick={() => onEditIssue(issue)} />
+      <IssueCard issue={issue} allIssues={allIssues} onClick={() => onEditIssue(issue)} />
     </motion.div>
   );
 }
 
-function DroppableColumn({ id, column, issues, swimlaneBy, swimlaneGroup, onEditIssue }: any) {
+function DroppableColumn({ id, column, issues, allIssues = [], swimlaneBy, swimlaneGroup, onEditIssue }: any) {
   const { setNodeRef, isOver } = useDroppable({
     id,
     data: { status: column.id, swimlaneBy, swimlaneGroupId: swimlaneGroup.id },
@@ -144,14 +179,14 @@ function DroppableColumn({ id, column, issues, swimlaneBy, swimlaneGroup, onEdit
 
       <div ref={setNodeRef} className={clsx("p-4 space-y-3", swimlaneBy === 'none' ? 'flex-1 overflow-y-auto' : 'min-h-[120px]')}>
         {issues.map((issue: Issue) => (
-          <DraggableIssue key={issue.id} issue={issue} onEditIssue={onEditIssue} />
+          <DraggableIssue key={issue.id} issue={issue} allIssues={allIssues} onEditIssue={onEditIssue} />
         ))}
       </div>
     </div>
   );
 }
 
-export const Board: React.FC<BoardProps> = ({ issues, onUpdateStatus, onUpdateIssueField, onEditIssue }) => {
+export const Board: React.FC<BoardProps> = ({ issues, allIssues = [], onUpdateStatus, onUpdateIssueField, onEditIssue }) => {
   const [swimlaneBy, setSwimlaneBy] = useState<'none' | 'assignee' | 'priority'>('none');
 
   const groupedIssues = useMemo(() => {
@@ -301,6 +336,7 @@ export const Board: React.FC<BoardProps> = ({ issues, onUpdateStatus, onUpdateIs
                         id={`${group.id}-${column.id}`}
                         column={column}
                         issues={columnIssues}
+                        allIssues={allIssues.length > 0 ? allIssues : issues}
                         swimlaneBy={swimlaneBy}
                         swimlaneGroup={group}
                         onEditIssue={onEditIssue}
@@ -316,7 +352,7 @@ export const Board: React.FC<BoardProps> = ({ issues, onUpdateStatus, onUpdateIs
 
       {createPortal(
         <DragOverlay>
-          {activeIssue ? <IssueCard issue={activeIssue} isOverlay={true} /> : null}
+          {activeIssue ? <IssueCard issue={activeIssue} allIssues={allIssues.length > 0 ? allIssues : issues} isOverlay={true} /> : null}
         </DragOverlay>,
         document.body
       )}

@@ -2,8 +2,9 @@ import React, { useState } from 'react';
 import { Issue, IssueStatus, IssuePriority, BulkUpdatePayload } from '../types';
 import { format } from 'date-fns';
 import { clsx } from 'clsx';
-import { AlertCircle, CheckCircle2, Clock, CircleDashed, CheckSquare, Square, FileEdit } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Clock, CircleDashed, CheckSquare, Square, FileEdit, Lock, ArrowRight, Link2 } from 'lucide-react';
 import { Avatar } from './Avatar';
+import { resolveDependencies } from '../utils/dependencies';
 
 const isOverdue = (issue: Issue) => {
   if (!issue.dueDate || issue.status === 'done') return false;
@@ -17,11 +18,12 @@ const isOverdue = (issue: Issue) => {
 
 interface IssueListProps {
   issues: Issue[];
+  allIssues?: Issue[];
   onEditIssue: (issue: Issue) => void;
   onBulkUpdate: (payload: BulkUpdatePayload) => Promise<void>;
 }
 
-export const IssueList: React.FC<IssueListProps> = ({ issues, onEditIssue, onBulkUpdate }) => {
+export const IssueList: React.FC<IssueListProps> = ({ issues, allIssues = [], onEditIssue, onBulkUpdate }) => {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isUpdating, setIsUpdating] = useState(false);
 
@@ -123,6 +125,7 @@ export const IssueList: React.FC<IssueListProps> = ({ issues, onEditIssue, onBul
               <th className="px-6 py-4">Type</th>
               <th className="px-6 py-4">Status</th>
               <th className="px-6 py-4">Priority</th>
+              <th className="px-6 py-4">Dependencies</th>
               <th className="px-6 py-4">Assignee</th>
               <th className="px-6 py-4">Reporter</th>
               <th className="px-6 py-4">Created</th>
@@ -131,6 +134,7 @@ export const IssueList: React.FC<IssueListProps> = ({ issues, onEditIssue, onBul
           <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
             {issues.map(issue => {
               const overdue = isOverdue(issue);
+              const deps = resolveDependencies(issue, allIssues.length > 0 ? allIssues : issues);
               return (
               <tr 
                 key={issue.id} 
@@ -153,6 +157,15 @@ export const IssueList: React.FC<IssueListProps> = ({ issues, onEditIssue, onBul
                     {overdue && (
                       <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-red-100 text-red-600 dark:bg-red-900/40 dark:text-red-400 border border-red-200 dark:border-red-800/50">
                         Overdue
+                      </span>
+                    )}
+                    {deps.activeBlockersCount > 0 && (
+                      <span 
+                        className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300 border border-rose-200 dark:border-rose-900/50"
+                        title={`Blocked by: ${deps.blockedBy.filter(b => b.isBlockerActive).map(b => b.targetIssue.title).join(', ')}`}
+                      >
+                        <Lock size={10} className="text-rose-600 dark:text-rose-400" />
+                        Blocked ({deps.activeBlockersCount})
                       </span>
                     )}
                   </div>
@@ -196,6 +209,53 @@ export const IssueList: React.FC<IssueListProps> = ({ issues, onEditIssue, onBul
                   )}>
                     {issue.priority}
                   </span>
+                </td>
+
+                <td className="px-6 py-4">
+                  <div className="flex flex-wrap items-center gap-1.5 min-w-[120px]">
+                    {deps.all.length === 0 ? (
+                      <span className="text-xs text-slate-400 dark:text-slate-500 italic">—</span>
+                    ) : (
+                      <>
+                        {deps.activeBlockersCount > 0 && (
+                          <span 
+                            className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-md bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300 border border-rose-200 dark:border-rose-900/40"
+                            title={`Blocked by: ${deps.blockedBy.filter(b => b.isBlockerActive).map(b => b.targetIssue.title).join(', ')}`}
+                          >
+                            <Lock size={11} className="text-rose-600 dark:text-rose-400" />
+                            {deps.activeBlockersCount} Blocker{deps.activeBlockersCount > 1 ? 's' : ''}
+                          </span>
+                        )}
+                        {deps.hasBlockersResolved && (
+                          <span 
+                            className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-900/40"
+                            title="All prerequisite tasks have been completed"
+                          >
+                            <CheckCircle2 size={11} className="text-emerald-600 dark:text-emerald-400" />
+                            Resolved
+                          </span>
+                        )}
+                        {deps.blocks.length > 0 && (
+                          <span 
+                            className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-md bg-amber-50 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300 border border-amber-200 dark:border-amber-900/40"
+                            title={`Blocks: ${deps.blocks.map(b => b.targetIssue.title).join(', ')}`}
+                          >
+                            <ArrowRight size={11} className="text-amber-600 dark:text-amber-400" />
+                            Blocks {deps.blocks.length}
+                          </span>
+                        )}
+                        {deps.relatesTo.length > 0 && (
+                          <span 
+                            className="inline-flex items-center gap-1 text-[11px] text-slate-600 dark:text-slate-400 px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-700/60"
+                            title={`Related: ${deps.relatesTo.map(r => r.targetIssue.title).join(', ')}`}
+                          >
+                            <Link2 size={11} className="text-slate-400" />
+                            {deps.relatesTo.length}
+                          </span>
+                        )}
+                      </>
+                    )}
+                  </div>
                 </td>
                 <td className="px-6 py-4">
                   {issue.assigneeName ? (
