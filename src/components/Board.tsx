@@ -177,7 +177,7 @@ function DroppableColumn({ id, column, issues, allIssues = [], swimlaneBy, swiml
         </div>
       )}
 
-      <div ref={setNodeRef} className={clsx("p-4 space-y-3", swimlaneBy === 'none' ? 'flex-1 overflow-y-auto' : 'min-h-[120px]')}>
+      <div ref={setNodeRef} className={clsx("p-4 space-y-3", swimlaneBy === 'none' ? 'flex-1 overflow-y-auto smooth-scroll overscroll-y-contain' : 'min-h-[120px]')}>
         {issues.map((issue: Issue) => (
           <DraggableIssue key={issue.id} issue={issue} allIssues={allIssues} onEditIssue={onEditIssue} />
         ))}
@@ -302,7 +302,7 @@ export const Board: React.FC<BoardProps> = ({ issues, allIssues = [], onUpdateSt
           </div>
         </div>
 
-        <div className={clsx("flex-1 overflow-auto -mx-4 px-4 lg:mx-0 lg:px-0", swimlaneBy !== 'none' && "pb-8")}>
+        <div className={clsx("flex-1 overflow-auto smooth-scroll overscroll-x-contain -mx-4 px-4 lg:mx-0 lg:px-0", swimlaneBy !== 'none' && "pb-8")}>
           <div className={clsx("min-w-max flex flex-col pb-4 gap-6", swimlaneBy === 'none' ? 'h-full' : 'min-h-full')}>
             
             {swimlaneBy !== 'none' && (

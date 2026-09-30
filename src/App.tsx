@@ -4,6 +4,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import { clsx } from 'clsx';
 import { Sidebar } from './components/Sidebar';
 import { Dashboard } from './components/Dashboard';
 import { Board } from './components/Board';
@@ -443,13 +444,13 @@ export default function App() {
           </div>
         </header>
 
-        <div className="flex-1 overflow-y-auto">
+        <div className={clsx("flex-1 smooth-scroll overscroll-y-contain", currentView === 'board' ? 'overflow-hidden flex flex-col' : 'overflow-y-auto')}>
           {isLoading ? (
             <div className="h-full flex items-center justify-center">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-tawny-port"></div>
             </div>
           ) : (
-            <div className="max-w-[1600px] mx-auto">
+            <div className={clsx("max-w-[1600px] mx-auto w-full", currentView === 'board' && "flex-1 flex flex-col h-full overflow-hidden")}>
               {(currentView === 'list' || currentView === 'dashboard') && (
                 <div className="px-4 lg:px-8 pt-6">
                   <FilterBar

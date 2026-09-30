@@ -294,7 +294,7 @@ export const IssueModal: React.FC<IssueModalProps> = ({ isOpen, onClose, onSave,
           </div>
         )}
 
-        <div className="p-6 overflow-y-auto flex-1">
+        <div className="p-6 overflow-y-auto flex-1 smooth-scroll overscroll-y-contain">
           {activeTab === 'details' ? (
             !isEditing && issue ? (
               <div className="space-y-6">
@@ -890,7 +890,7 @@ export const IssueModal: React.FC<IssueModalProps> = ({ isOpen, onClose, onSave,
             </div>
           ) : (
             <div className="space-y-6 flex flex-col h-full">
-              <div className="flex-1 overflow-y-auto space-y-4 pr-2">
+              <div className="flex-1 overflow-y-auto space-y-4 pr-2 smooth-scroll overscroll-y-contain">
                 {comments.length === 0 ? (
                   <div className="text-center py-8 text-slate-500 dark:text-slate-400">
                     <p>No comments yet. Be the first to comment!</p>

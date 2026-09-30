@@ -157,7 +157,7 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({ userId, 
             
             {/* Alerts Tab */}
             {activeTab === 'alerts' && (
-              <div className="max-h-96 overflow-y-auto">
+              <div className="max-h-96 overflow-y-auto smooth-scroll overscroll-y-contain">
                 {notifications.length === 0 ? (
                   <div className="p-8 text-center text-slate-400 dark:text-slate-500">
                     <Bell size={32} className="mx-auto mb-2 opacity-20" />
@@ -215,7 +215,7 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({ userId, 
 
             {/* Email Logs Tab */}
             {activeTab === 'emails' && (
-              <div className="max-h-96 overflow-y-auto">
+              <div className="max-h-96 overflow-y-auto smooth-scroll overscroll-y-contain">
                 {loadingEmails ? (
                   <div className="p-8 text-center text-slate-400 dark:text-slate-500 text-xs">
                     Loading dispatched emails...

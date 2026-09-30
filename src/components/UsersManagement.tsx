@@ -66,7 +66,7 @@ export const UsersManagement: React.FC<UsersManagementProps> = ({ currentUserPro
              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-tawny-port"></div>
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto smooth-scroll overscroll-x-contain">
             <table className="w-full text-left text-sm text-slate-600 dark:text-slate-400">
               <thead className="text-xs text-slate-500 bg-slate-50 dark:bg-slate-800/50 uppercase border-b border-slate-200 dark:border-slate-700">
                 <tr>

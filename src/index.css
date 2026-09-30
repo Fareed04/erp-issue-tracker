@@ -29,7 +29,71 @@
     --color-chart-4: #34D399;
   }
 
+  html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
   body {
     @apply bg-slate-50 text-erp-black dark:bg-slate-900 dark:text-slate-100;
+    scroll-behavior: smooth;
   }
+
+  /* Touch momentum scrolling and smooth scrolling for all scroll containers */
+  * {
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Sleek, hardware-accelerated smooth scrollbars */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: rgba(148, 163, 184, 0.4);
+    border-radius: 9999px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(100, 116, 139, 0.7);
+  }
+
+  .dark ::-webkit-scrollbar-thumb {
+    background: rgba(148, 163, 184, 0.25);
+  }
+
+  .dark ::-webkit-scrollbar-thumb:hover {
+    background: rgba(148, 163, 184, 0.55);
+  }
+
+  /* Firefox scrollbar styling */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(148, 163, 184, 0.4) transparent;
+  }
+
+  .dark * {
+    scrollbar-color: rgba(148, 163, 184, 0.25) transparent;
+  }
+}
+
+/* Custom smooth scrolling and containment utility */
+.smooth-scroll {
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+.overscroll-y-contain {
+  overscroll-behavior-y: contain;
+}
+
+.overscroll-x-contain {
+  overscroll-behavior-x: contain;
 }

@@ -254,7 +254,7 @@ export const Auth: React.FC = () => {
                   <X size={20} />
                 </button>
               </div>
-              <div className="overflow-y-auto p-6 space-y-6">
+              <div className="overflow-y-auto p-6 space-y-6 smooth-scroll overscroll-y-contain">
                 <form id="profile-form" onSubmit={handleSaveProfile} className="space-y-6">
                   
                   {/* Basic Profile */}

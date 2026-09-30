@@ -52,7 +52,7 @@ export function KeyboardShortcutsModal({ isOpen, onClose }: KeyboardShortcutsMod
           </button>
         </div>
 
-        <div className="p-4 sm:p-6 flex-1 overflow-y-auto">
+        <div className="p-4 sm:p-6 flex-1 overflow-y-auto smooth-scroll overscroll-y-contain">
           <ul className="space-y-4">
             {shortcuts.map((shortcut) => (
               <li key={shortcut.key} className="flex items-center justify-between">
