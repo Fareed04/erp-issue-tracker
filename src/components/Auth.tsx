@@ -48,6 +48,7 @@ export const Auth: React.FC = () => {
     previewUrl?: string | null;
   } | null>(null);
   const [loginError, setLoginError] = useState<string | null>(null);
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
 
   useEffect(() => {
@@ -55,6 +56,8 @@ export const Auth: React.FC = () => {
   }, [user, loading]);
 
   const handleLogin = async () => {
+    if (isLoggingIn) return;
+    setIsLoggingIn(true);
     setLoginError(null);
     try {
       const result = await signInWithPopup(auth, googleProvider);
@@ -86,12 +89,23 @@ export const Auth: React.FC = () => {
         }
       }
     } catch (err: any) {
-      if (err.code === 'auth/popup-closed-by-user') {
+      // Ignorable user-initiated or duplicate cancellation events
+      if (
+        err?.code === 'auth/popup-closed-by-user' ||
+        err?.code === 'auth/cancelled-popup-request'
+      ) {
+        return;
+      }
+      if (err?.code === 'auth/popup-blocked') {
+        setLoginError('Sign-in popup was blocked. Please allow popups for this site and try again.');
+        setTimeout(() => setLoginError(null), 6000);
         return;
       }
       setLoginError('Login failed. Please try again.');
       console.error('Login failed', err);
       setTimeout(() => setLoginError(null), 5000);
+    } finally {
+      setIsLoggingIn(false);
     }
   };
 
@@ -588,11 +602,22 @@ export const Auth: React.FC = () => {
   return (
     <div className="flex flex-col items-center gap-2">
       <button
+        type="button"
         onClick={handleLogin}
-        className="flex items-center gap-2 bg-tawny-port hover:bg-tawny-port/90 text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-sm"
+        disabled={isLoggingIn}
+        className="flex items-center gap-2 bg-tawny-port hover:bg-tawny-port/90 disabled:opacity-60 disabled:cursor-not-allowed text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-sm select-none"
       >
-        <LogIn size={18} />
-        Sign In
+        {isLoggingIn ? (
+          <>
+            <Loader2 size={18} className="animate-spin" />
+            <span>Signing In...</span>
+          </>
+        ) : (
+          <>
+            <LogIn size={18} />
+            <span>Sign In</span>
+          </>
+        )}
       </button>
       {loginError && (
         <p className="text-xs text-red-600 dark:text-red-400 font-medium animate-pulse">{loginError}</p>
