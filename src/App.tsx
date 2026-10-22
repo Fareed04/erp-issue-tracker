@@ -18,6 +18,7 @@ import { FilterBar } from './components/FilterBar';
 import { NotificationCenter } from './components/NotificationCenter';
 import { ThemeToggle } from './components/ThemeToggle';
 import { UsersManagement } from './components/UsersManagement';
+import { DatabaseExplorer } from './components/DatabaseExplorer';
 
 import { auth } from './firebase';
 import { useAuthState } from 'react-firebase-hooks/auth';
@@ -40,7 +41,7 @@ const initialFilters: FilterOptions = {
 export default function App() {
   const [user, authLoading] = useAuthState(auth);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-  const [currentView, setCurrentView] = useState<'dashboard' | 'board' | 'list' | 'users'>('dashboard');
+  const [currentView, setCurrentView] = useState<'dashboard' | 'board' | 'list' | 'users' | 'database'>('dashboard');
   const [issues, setIssues] = useState<Issue[]>([]);
   const [filters, setFilters] = useState<FilterOptions>(initialFilters);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -412,7 +413,7 @@ export default function App() {
               <Menu size={20} />
             </button>
             <h1 className="text-lg lg:text-xl font-bold text-erp-black dark:text-white capitalize truncate">
-              {currentView === 'board' ? 'Kanban Board' : currentView}
+              {currentView === 'board' ? 'Kanban Board' : currentView === 'database' ? 'Database Explorer' : currentView === 'users' ? 'User Management' : currentView}
             </h1>
           </div>
           <div className="flex items-center gap-1.5 sm:gap-2 lg:gap-4 flex-shrink-0">
@@ -481,6 +482,9 @@ export default function App() {
               )}
               {currentView === 'users' && userProfile && (
                 <UsersManagement currentUserProfile={userProfile} />
+              )}
+              {currentView === 'database' && userProfile && (
+                <DatabaseExplorer currentUserProfile={userProfile} />
               )}
             </div>
           )}

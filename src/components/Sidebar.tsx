@@ -1,10 +1,10 @@
 import React from 'react';
-import { LayoutDashboard, KanbanSquare, List, X, Users } from 'lucide-react';
+import { LayoutDashboard, KanbanSquare, List, X, Users, Database } from 'lucide-react';
 import { clsx } from 'clsx';
 
 interface SidebarProps {
-  currentView: 'dashboard' | 'board' | 'list' | 'users';
-  onViewChange: (view: 'dashboard' | 'board' | 'list' | 'users') => void;
+  currentView: 'dashboard' | 'board' | 'list' | 'users' | 'database';
+  onViewChange: (view: 'dashboard' | 'board' | 'list' | 'users' | 'database') => void;
   isOpen: boolean;
   onClose: () => void;
   userProfile?: import('../types').UserProfile | null;
@@ -19,6 +19,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange, isO
   
   const adminNavItems = [
     { id: 'users', label: 'Manage Users', icon: Users },
+    { id: 'database', label: 'Database Explorer', icon: Database },
   ] as const;
 
   return (
