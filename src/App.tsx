@@ -26,6 +26,7 @@ import { Auth } from './components/Auth';
 
 import { TutorialGuide } from './components/TutorialGuide';
 import { UserProfile } from './types';
+import { initSmoothScrolling } from './utils/smoothScroll';
 
 const initialFilters: FilterOptions = {
   search: '',
@@ -49,6 +50,11 @@ export default function App() {
   const [editingIssue, setEditingIssue] = useState<Issue | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [defaultNewIssueType, setDefaultNewIssueType] = useState<IssueType | undefined>(undefined);
+
+  useEffect(() => {
+    const cleanupSmoothScroll = initSmoothScrolling();
+    return cleanupSmoothScroll;
+  }, []);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {

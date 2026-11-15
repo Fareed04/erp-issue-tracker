@@ -47,7 +47,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange, isO
             <X size={20} />
           </button>
         </div>
-        <nav className="flex-1 px-4 space-y-2">
+        <nav className="flex-1 px-4 pb-6 space-y-2 overflow-y-auto smooth-scroll overscroll-y-contain">
           {navItems.map(item => {
             const Icon = item.icon;
             const isActive = currentView === item.id;

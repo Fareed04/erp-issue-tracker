@@ -306,7 +306,7 @@ export const Board: React.FC<BoardProps> = ({ issues, allIssues = [], onUpdateSt
           <div className={clsx("min-w-max flex flex-col pb-4 gap-6", swimlaneBy === 'none' ? 'h-full' : 'min-h-full')}>
             
             {swimlaneBy !== 'none' && (
-              <div className="flex gap-4 lg:gap-6 sticky top-0 z-20 bg-white/90 dark:bg-slate-900/90 backdrop-blur pt-2 pb-2 -mt-2">
+              <div className="flex gap-4 lg:gap-6 sticky top-0 z-20 bg-white/90 dark:bg-slate-900/90 backdrop-blur pt-2 pb-2 -mt-2 transform-gpu">
                 {COLUMNS.map(column => {
                   const Icon = column.icon;
                   return (
