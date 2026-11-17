@@ -1,8 +1,9 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Issue, IssueStatus } from '../types';
 import { motion } from 'motion/react';
 import { clsx } from 'clsx';
-import { AlertCircle, Clock, CheckCircle2, CircleDashed, LayoutGrid, FileEdit, Lock, ArrowRight } from 'lucide-react';
+import { format } from 'date-fns';
+import { AlertCircle, Clock, CheckCircle2, CircleDashed, LayoutGrid, FileEdit, Lock, ArrowRight, CalendarClock } from 'lucide-react';
 import { Avatar } from './Avatar';
 import { resolveDependencies } from '../utils/dependencies';
 import {
@@ -33,8 +34,52 @@ const COLUMNS: { id: IssueStatus; label: string; icon: any; color: string }[] = 
   { id: 'done', label: 'Done', icon: CheckCircle2, color: 'text-emerald-500' },
 ];
 
-function IssueCard({ issue, allIssues = [], onClick, isOverlay }: { issue: Issue; allIssues?: Issue[]; onClick?: () => void; isOverlay?: boolean }) {
+function formatPendingDuration(isoTimestamp: string, nowMs: number): { label: string; hours: number } | null {
+  const startMs = new Date(isoTimestamp).getTime();
+  if (Number.isNaN(startMs)) return null;
+  const diffMs = Math.max(0, nowMs - startMs);
+  const totalMinutes = Math.floor(diffMs / 60000);
+  const totalHours = Math.floor(totalMinutes / 60);
+  const days = Math.floor(totalHours / 24);
+
+  if (totalMinutes < 1) return { label: 'Just now', hours: 0 };
+  if (totalMinutes < 60) return { label: `${totalMinutes}m pending`, hours: 0 };
+  if (totalHours < 24) {
+    const mins = totalMinutes % 60;
+    return { label: mins > 0 ? `${totalHours}h ${mins}m pending` : `${totalHours}h pending`, hours: totalHours };
+  }
+  const remHours = totalHours % 24;
+  return {
+    label: remHours > 0 ? `${days}d ${remHours}h pending` : `${days}d pending`,
+    hours: totalHours,
+  };
+}
+
+function formatAssignmentDateTime(isoTimestamp: string, nowMs: number): string {
+  const date = new Date(isoTimestamp);
+  if (Number.isNaN(date.getTime())) return '';
+  const sameYear = date.getFullYear() === new Date(nowMs).getFullYear();
+  return format(date, sameYear ? 'MMM d, h:mm a' : 'MMM d, yyyy · h:mm a');
+}
+
+function IssueCard({
+  issue,
+  allIssues = [],
+  onClick,
+  isOverlay,
+  nowMs = Date.now(),
+}: {
+  issue: Issue;
+  allIssues?: Issue[];
+  onClick?: () => void;
+  isOverlay?: boolean;
+  nowMs?: number;
+}) {
   const deps = resolveDependencies(issue, allIssues);
+  const isAssigned = Boolean(issue.assigneeUid || issue.assigneeName);
+  const referenceTimestamp = isAssigned ? (issue.assignedAt || issue.created_at) : issue.created_at;
+  const formattedTimestamp = formatAssignmentDateTime(referenceTimestamp, nowMs);
+  const pendingInfo = issue.status !== 'done' ? formatPendingDuration(referenceTimestamp, nowMs) : null;
 
   return (
     <div
@@ -103,23 +148,54 @@ function IssueCard({ issue, allIssues = [], onClick, isOverlay }: { issue: Issue
         </div>
       )}
 
-      <div className="mt-4 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          {issue.assigneeName ? (
-            <Avatar name={issue.assigneeName} src={issue.assigneePhoto} size="sm" />
-          ) : (
-            <div className="w-6 h-6 rounded-full bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 border-dashed flex items-center justify-center text-slate-400 dark:text-slate-500 text-xs" title="Unassigned">
-              ?
-            </div>
+      <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-700/60 space-y-2">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 min-w-0">
+            {issue.assigneeName ? (
+              <Avatar name={issue.assigneeName} src={issue.assigneePhoto} size="sm" />
+            ) : (
+              <div className="w-6 h-6 rounded-full bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 border-dashed flex items-center justify-center text-slate-400 dark:text-slate-500 text-xs shrink-0" title="Unassigned">
+                ?
+              </div>
+            )}
+            <span className="text-xs text-slate-600 dark:text-slate-300 font-medium truncate">{issue.assigneeName || 'Unassigned'}</span>
+          </div>
+
+          {pendingInfo && (
+            <span
+              className={clsx(
+                "inline-flex items-center gap-1 text-[11px] font-semibold shrink-0",
+                pendingInfo.hours >= 72
+                  ? "text-rose-600 dark:text-rose-400"
+                  : pendingInfo.hours >= 24
+                    ? "text-amber-700 dark:text-amber-400"
+                    : "text-slate-500 dark:text-slate-400"
+              )}
+              title={`Pending since ${format(new Date(referenceTimestamp), 'PPpp')}`}
+            >
+              <Clock size={11} className="shrink-0" />
+              {pendingInfo.label}
+            </span>
           )}
-          <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">{issue.assigneeName || 'Unassigned'}</span>
         </div>
+
+        {formattedTimestamp && (
+          <div
+            className="flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400"
+            title={`${isAssigned ? 'Assigned' : 'Created'}: ${format(new Date(referenceTimestamp), 'PPpp')}`}
+          >
+            <CalendarClock size={12} className="shrink-0 text-slate-400 dark:text-slate-500" />
+            <span className="truncate">
+              {isAssigned ? 'Assigned' : 'Created'} {formattedTimestamp}
+            </span>
+          </div>
+        )}
       </div>
     </div>
   );
 }
 
-const DraggableIssue: React.FC<{ issue: Issue; allIssues?: Issue[]; onEditIssue: (i: Issue) => void }> = ({ issue, allIssues = [], onEditIssue }) => {
+const DraggableIssue: React.FC<{ issue: Issue; allIssues?: Issue[]; onEditIssue: (i: Issue) => void; nowMs: number }> = ({ issue, allIssues = [], onEditIssue, nowMs }) => {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: issue.id,
     data: issue,
@@ -144,12 +220,12 @@ const DraggableIssue: React.FC<{ issue: Issue; allIssues?: Issue[]; onEditIssue:
       {...attributes}
       className="touch-none"
     >
-      <IssueCard issue={issue} allIssues={allIssues} onClick={() => onEditIssue(issue)} />
+      <IssueCard issue={issue} allIssues={allIssues} onClick={() => onEditIssue(issue)} nowMs={nowMs} />
     </motion.div>
   );
 }
 
-function DroppableColumn({ id, column, issues, allIssues = [], swimlaneBy, swimlaneGroup, onEditIssue }: any) {
+function DroppableColumn({ id, column, issues, allIssues = [], swimlaneBy, swimlaneGroup, onEditIssue, nowMs }: any) {
   const { setNodeRef, isOver } = useDroppable({
     id,
     data: { status: column.id, swimlaneBy, swimlaneGroupId: swimlaneGroup.id },
@@ -179,7 +255,7 @@ function DroppableColumn({ id, column, issues, allIssues = [], swimlaneBy, swiml
 
       <div ref={setNodeRef} className={clsx("p-4 space-y-3", swimlaneBy === 'none' ? 'flex-1 overflow-y-auto smooth-scroll overscroll-y-contain' : 'min-h-[120px]')}>
         {issues.map((issue: Issue) => (
-          <DraggableIssue key={issue.id} issue={issue} allIssues={allIssues} onEditIssue={onEditIssue} />
+          <DraggableIssue key={issue.id} issue={issue} allIssues={allIssues} onEditIssue={onEditIssue} nowMs={nowMs} />
         ))}
       </div>
     </div>
@@ -188,6 +264,12 @@ function DroppableColumn({ id, column, issues, allIssues = [], swimlaneBy, swiml
 
 export const Board: React.FC<BoardProps> = ({ issues, allIssues = [], onUpdateStatus, onUpdateIssueField, onEditIssue }) => {
   const [swimlaneBy, setSwimlaneBy] = useState<'none' | 'assignee' | 'priority'>('none');
+  const [nowMs, setNowMs] = useState(() => Date.now());
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setNowMs(Date.now()), 60000);
+    return () => window.clearInterval(timer);
+  }, []);
 
   const groupedIssues = useMemo(() => {
     if (swimlaneBy === 'none') {
@@ -261,6 +343,16 @@ export const Board: React.FC<BoardProps> = ({ issues, allIssues = [], onUpdateSt
       const newAssigneeUid = dropData.swimlaneGroupId === 'unassigned' ? null : dropData.swimlaneGroupId;
       if (issue.assigneeUid !== newAssigneeUid) {
         updates.assigneeUid = newAssigneeUid;
+        if (newAssigneeUid === null) {
+          updates.assigneeName = null;
+          updates.assigneePhoto = null;
+        } else {
+          const targetIssue = issues.find(i => i.assigneeUid === newAssigneeUid);
+          if (targetIssue) {
+            updates.assigneeName = targetIssue.assigneeName;
+            updates.assigneePhoto = targetIssue.assigneePhoto;
+          }
+        }
       }
     } else if (dropData.swimlaneBy === 'priority' && onUpdateIssueField) {
       if (issue.priority !== dropData.swimlaneGroupId) {
@@ -340,6 +432,7 @@ export const Board: React.FC<BoardProps> = ({ issues, allIssues = [], onUpdateSt
                         swimlaneBy={swimlaneBy}
                         swimlaneGroup={group}
                         onEditIssue={onEditIssue}
+                        nowMs={nowMs}
                       />
                     );
                   })}
@@ -352,7 +445,7 @@ export const Board: React.FC<BoardProps> = ({ issues, allIssues = [], onUpdateSt
 
       {createPortal(
         <DragOverlay>
-          {activeIssue ? <IssueCard issue={activeIssue} allIssues={allIssues.length > 0 ? allIssues : issues} isOverlay={true} /> : null}
+          {activeIssue ? <IssueCard issue={activeIssue} allIssues={allIssues.length > 0 ? allIssues : issues} isOverlay={true} nowMs={nowMs} /> : null}
         </DragOverlay>,
         document.body
       )}

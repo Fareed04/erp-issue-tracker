@@ -185,8 +185,10 @@ export const createIssue = async (payload: CreateIssuePayload, user: any): Promi
   }
 
   const now = new Date().toISOString();
+  const hasAssignee = Boolean(payload.assigneeUid || payload.assigneeName);
   const data = {
     ...payload,
+    assignedAt: hasAssignee ? (payload.assignedAt || now) : null,
     created_at: now,
     updated_at: now,
   };
@@ -245,10 +247,21 @@ export const updateIssue = async (id: string, payload: Partial<Issue>, user: any
 
   const now = new Date().toISOString();
 
-  const data = {
+  const data: Record<string, any> = {
     ...payload,
     updated_at: now,
   };
+
+  if (existingData) {
+    const uidChanged = payload.assigneeUid !== undefined && payload.assigneeUid !== existingData.assigneeUid;
+    const nameChanged = payload.assigneeName !== undefined && payload.assigneeName !== existingData.assigneeName;
+    if (uidChanged || nameChanged) {
+      const nextUid = payload.assigneeUid !== undefined ? payload.assigneeUid : existingData.assigneeUid;
+      const nextName = payload.assigneeName !== undefined ? payload.assigneeName : existingData.assigneeName;
+      data.assignedAt = nextUid || nextName ? now : null;
+    }
+  }
+
   await updateDoc(docRef, data);
   
   if (user && existingData) {
@@ -395,6 +408,7 @@ export const bulkUpdateIssues = async (payload: BulkUpdatePayload, user: any): P
     if (payload.priority) updateData.priority = payload.priority;
     if (payload.assignee) {
       updateData.assigneeName = payload.assignee;
+      updateData.assignedAt = now;
     }
     batch.update(docRef, updateData);
     

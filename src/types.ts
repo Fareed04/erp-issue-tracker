@@ -31,6 +31,7 @@ export interface Issue {
   links?: IssueLink[];
   order?: number;
   voiceNoteUrl?: string | null;
+  assignedAt?: string | null;
   created_at: string;
   updated_at: string;
 }

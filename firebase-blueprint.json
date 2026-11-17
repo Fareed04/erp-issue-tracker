@@ -38,6 +38,7 @@
             "required": ["id", "type", "targetIssueId"]
           }
         },
+        "assignedAt": { "type": "string", "format": "date-time", "description": "Timestamp when the issue was assigned." },
         "created_at": { "type": "string", "format": "date-time" },
         "updated_at": { "type": "string", "format": "date-time" }
       },

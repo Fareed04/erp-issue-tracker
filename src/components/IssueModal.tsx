@@ -6,7 +6,7 @@ import * as api from '../services/api';
 import { Avatar } from './Avatar';
 import { AudioRecorder } from './AudioRecorder';
 import { AudioPlayer } from './AudioPlayer';
-import { formatDistanceToNow } from 'date-fns';
+import { format, formatDistanceToNow } from 'date-fns';
 import { auth } from '../firebase';
 import { resolveDependencies } from '../utils/dependencies';
 
@@ -344,7 +344,12 @@ export const IssueModal: React.FC<IssueModalProps> = ({ isOpen, onClose, onSave,
                   {issue.assigneeUid ? (
                     <div className="flex items-center gap-3">
                       <Avatar src={issue.assigneePhoto || null} name={issue.assigneeName || 'Unknown'} size="sm" />
-                      <span className="font-medium text-slate-900 dark:text-slate-100">{issue.assigneeName}</span>
+                      <div>
+                        <span className="font-medium text-slate-900 dark:text-slate-100 block">{issue.assigneeName}</span>
+                        <span className="text-xs text-slate-500 dark:text-slate-400">
+                          Assigned {format(new Date(issue.assignedAt || issue.created_at), 'MMM d, yyyy · h:mm a')}
+                        </span>
+                      </div>
                     </div>
                   ) : (
                     <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400">
