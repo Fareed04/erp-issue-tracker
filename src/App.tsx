@@ -241,6 +241,7 @@ export default function App() {
       Priority: issue.priority,
       Assignee: issue.assigneeName || 'Unassigned',
       Reporter: issue.reporterName || 'N/A',
+      'Logged Hours': issue.totalLoggedHours ?? 0,
       'Delay Cause': issue.delay_cause || 'N/A',
       'Created At': new Date(issue.created_at).toLocaleString(),
       'Updated At': new Date(issue.updated_at).toLocaleString(),
@@ -509,7 +510,7 @@ export default function App() {
         onSelectIssue={(target) => {
           setEditingIssue(target);
         }}
-        issue={editingIssue}
+        issue={editingIssue ? (issues.find(i => i.id === editingIssue.id) || editingIssue) : null}
         userProfile={userProfile}
         allIssues={issues}
         defaultType={defaultNewIssueType}

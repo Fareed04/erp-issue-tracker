@@ -39,10 +39,27 @@
           }
         },
         "assignedAt": { "type": "string", "format": "date-time", "description": "Timestamp when the issue was assigned." },
+        "totalLoggedHours": { "type": "number", "description": "Total hours logged across all time entries for this issue." },
         "created_at": { "type": "string", "format": "date-time" },
         "updated_at": { "type": "string", "format": "date-time" }
       },
       "required": ["title", "type", "status", "priority", "reporterUid", "created_at", "updated_at"]
+    },
+    "TimeLog": {
+      "title": "Time Log Entry",
+      "description": "A record of hours spent by a user on a specific issue.",
+      "type": "object",
+      "properties": {
+        "issueId": { "type": "string", "description": "ID of the parent issue." },
+        "userId": { "type": "string", "description": "UID of the user who logged the time." },
+        "userName": { "type": "string", "description": "Display name of the user who logged the time." },
+        "userPhoto": { "type": "string", "description": "Photo URL of the user who logged the time." },
+        "hours": { "type": "number", "description": "Number of hours logged." },
+        "note": { "type": "string", "maxLength": 500, "description": "Optional note describing the work done." },
+        "date": { "type": "string", "description": "Date the work was performed (YYYY-MM-DD)." },
+        "timestamp": { "type": "string", "format": "date-time", "description": "ISO timestamp when the entry was created." }
+      },
+      "required": ["issueId", "userId", "userName", "hours", "date", "timestamp"]
     }
   },
   "firestore": {
@@ -53,6 +70,10 @@
     "/issues/{issueId}": {
       "schema": "Issue",
       "description": "Collection of system issues."
+    },
+    "/issues/{issueId}/timeLogs/{timeLogId}": {
+      "schema": "TimeLog",
+      "description": "Subcollection of time tracking entries logged against an issue."
     }
   }
 }

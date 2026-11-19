@@ -32,6 +32,7 @@ export interface Issue {
   order?: number;
   voiceNoteUrl?: string | null;
   assignedAt?: string | null;
+  totalLoggedHours?: number;
   created_at: string;
   updated_at: string;
 }
@@ -93,6 +94,18 @@ export interface Comment {
   userName: string;
   userPhoto: string | null;
   text: string;
+  timestamp: string;
+}
+
+export interface TimeLog {
+  id: string;
+  issueId: string;
+  userId: string;
+  userName: string;
+  userPhoto: string | null;
+  hours: number;
+  note?: string | null;
+  date: string;
   timestamp: string;
 }
 

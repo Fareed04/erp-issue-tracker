@@ -2,9 +2,10 @@ import React, { useState } from 'react';
 import { Issue, IssueStatus, IssuePriority, BulkUpdatePayload } from '../types';
 import { format } from 'date-fns';
 import { clsx } from 'clsx';
-import { AlertCircle, CheckCircle2, Clock, CircleDashed, CheckSquare, Square, FileEdit, Lock, ArrowRight, Link2 } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Clock, CircleDashed, CheckSquare, Square, FileEdit, Lock, ArrowRight, Link2, Timer } from 'lucide-react';
 import { Avatar } from './Avatar';
 import { resolveDependencies } from '../utils/dependencies';
+import { formatLoggedHours, formatHoursBreakdown, roundHours } from '../utils/time';
 
 const isOverdue = (issue: Issue) => {
   if (!issue.dueDate || issue.status === 'done') return false;
@@ -128,6 +129,7 @@ export const IssueList: React.FC<IssueListProps> = ({ issues, allIssues = [], on
               <th className="px-6 py-4">Dependencies</th>
               <th className="px-6 py-4">Assignee</th>
               <th className="px-6 py-4">Reporter</th>
+              <th className="px-6 py-4">Logged</th>
               <th className="px-6 py-4">Created</th>
             </tr>
           </thead>
@@ -276,6 +278,25 @@ export const IssueList: React.FC<IssueListProps> = ({ issues, allIssues = [], on
                   ) : (
                     <span className="text-sm text-slate-700 dark:text-slate-300">N/A</span>
                   )}
+                </td>
+                <td className="px-6 py-4">
+                  {(() => {
+                    const loggedHours = roundHours(issue.totalLoggedHours ?? 0);
+                    return (
+                      <span
+                        className={clsx(
+                          "inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-md",
+                          loggedHours > 0
+                            ? "bg-tawny-port/10 text-tawny-port dark:bg-tawny-port/20 dark:text-rose-300"
+                            : "text-slate-400 dark:text-slate-500"
+                        )}
+                        title={loggedHours > 0 ? formatHoursBreakdown(loggedHours) : 'No time logged yet'}
+                      >
+                        <Timer size={12} />
+                        {formatLoggedHours(loggedHours)}
+                      </span>
+                    );
+                  })()}
                 </td>
                 <td className="px-6 py-4 text-sm text-slate-500 dark:text-slate-400">
                   {format(new Date(issue.created_at), 'MMM d, yyyy')}

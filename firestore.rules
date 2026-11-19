@@ -27,7 +27,25 @@ service cloud.firestore {
              data.status in ['draft', 'todo', 'in_progress', 'blocked', 'done'] &&
              data.priority in ['low', 'medium', 'high', 'critical'] &&
              data.reporterUid is string &&
-             (!('links' in data) || data.links == null || data.links is list);
+             (!('links' in data) || data.links == null || data.links is list) &&
+             (!('totalLoggedHours' in data) || data.totalLoggedHours == null || (data.totalLoggedHours is number && data.totalLoggedHours >= 0));
+    }
+
+    function isValidTimeLog(data, issueId) {
+      return data.keys().hasAll(['issueId', 'userId', 'userName', 'hours', 'date', 'timestamp']) &&
+             data.issueId is string && data.issueId == issueId && data.issueId.size() <= 128 &&
+             data.userId is string && data.userId == request.auth.uid &&
+             data.userName is string && data.userName.size() > 0 && data.userName.size() <= 120 &&
+             data.hours is number && data.hours > 0 && data.hours <= 1000 &&
+             data.date is string && data.date.size() > 0 && data.date.size() <= 32 &&
+             data.timestamp is string && data.timestamp.size() > 0 && data.timestamp.size() <= 64 &&
+             (!('note' in data) || data.note == null || (data.note is string && data.note.size() <= 500));
+    }
+
+    function isUserAdmin() {
+      return isAuthenticated() &&
+             exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Admin';
     }
 
     // ===============================================================
@@ -62,6 +80,12 @@ service cloud.firestore {
         allow create: if isAuthenticated();
         allow update: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
         allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      }
+
+      match /timeLogs/{timeLogId} {
+        allow read: if isAuthenticated();
+        allow create: if isAuthenticated() && isValidTimeLog(request.resource.data, issueId);
+        allow delete: if isAuthenticated() && (resource.data.userId == request.auth.uid || isUserAdmin());
       }
     }
   }

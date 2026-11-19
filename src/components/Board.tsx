@@ -3,9 +3,10 @@ import { Issue, IssueStatus } from '../types';
 import { motion } from 'motion/react';
 import { clsx } from 'clsx';
 import { format } from 'date-fns';
-import { AlertCircle, Clock, CheckCircle2, CircleDashed, LayoutGrid, FileEdit, Lock, ArrowRight, CalendarClock } from 'lucide-react';
+import { AlertCircle, Clock, CheckCircle2, CircleDashed, LayoutGrid, FileEdit, Lock, ArrowRight, CalendarClock, Timer } from 'lucide-react';
 import { Avatar } from './Avatar';
 import { resolveDependencies } from '../utils/dependencies';
+import { formatLoggedHours, formatHoursBreakdown, roundHours } from '../utils/time';
 import {
   DndContext,
   DragOverlay,
@@ -80,6 +81,7 @@ function IssueCard({
   const referenceTimestamp = isAssigned ? (issue.assignedAt || issue.created_at) : issue.created_at;
   const formattedTimestamp = formatAssignmentDateTime(referenceTimestamp, nowMs);
   const pendingInfo = issue.status !== 'done' ? formatPendingDuration(referenceTimestamp, nowMs) : null;
+  const loggedHours = roundHours(issue.totalLoggedHours ?? 0);
 
   return (
     <div
@@ -179,17 +181,38 @@ function IssueCard({
           )}
         </div>
 
-        {formattedTimestamp && (
+        <div className="flex items-center justify-between gap-2">
+          {formattedTimestamp ? (
+            <div
+              className="flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400 min-w-0"
+              title={`${isAssigned ? 'Assigned' : 'Created'}: ${format(new Date(referenceTimestamp), 'PPpp')}`}
+            >
+              <CalendarClock size={12} className="shrink-0 text-slate-400 dark:text-slate-500" />
+              <span className="truncate">
+                {isAssigned ? 'Assigned' : 'Created'} {formattedTimestamp}
+              </span>
+            </div>
+          ) : (
+            <div />
+          )}
+
           <div
-            className="flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400"
-            title={`${isAssigned ? 'Assigned' : 'Created'}: ${format(new Date(referenceTimestamp), 'PPpp')}`}
+            className={clsx(
+              "inline-flex items-center gap-1 text-[11px] font-semibold px-1.5 py-0.5 rounded-md shrink-0 transition-colors",
+              loggedHours > 0
+                ? "bg-tawny-port/10 text-tawny-port dark:bg-tawny-port/20 dark:text-rose-300 border border-tawny-port/20"
+                : "text-slate-400 dark:text-slate-500 bg-slate-100/80 dark:bg-slate-700/40"
+            )}
+            title={
+              loggedHours > 0
+                ? `Total logged time: ${formatLoggedHours(loggedHours)} (${formatHoursBreakdown(loggedHours)})`
+                : 'No time logged yet — click card to log hours'
+            }
           >
-            <CalendarClock size={12} className="shrink-0 text-slate-400 dark:text-slate-500" />
-            <span className="truncate">
-              {isAssigned ? 'Assigned' : 'Created'} {formattedTimestamp}
-            </span>
+            <Timer size={11} className="shrink-0" />
+            <span>{formatLoggedHours(loggedHours)}</span>
           </div>
-        )}
+        </div>
       </div>
     </div>
   );

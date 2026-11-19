@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Issue, CreateIssuePayload, IssueType, IssueStatus, IssuePriority, UserProfile, ActivityLog } from '../types';
-import { X, Save, Trash2, User, Clock, Edit3, Mic, Link2, Lock, ArrowRight, CheckCircle2, Plus } from 'lucide-react';
+import { Issue, CreateIssuePayload, IssueType, IssueStatus, IssuePriority, UserProfile, ActivityLog, TimeLog } from '../types';
+import { X, Save, Trash2, User, Clock, Edit3, Mic, Link2, Lock, ArrowRight, CheckCircle2, Plus, Timer } from 'lucide-react';
 import { clsx } from 'clsx';
 import * as api from '../services/api';
 import { Avatar } from './Avatar';
@@ -9,6 +9,7 @@ import { AudioPlayer } from './AudioPlayer';
 import { format, formatDistanceToNow } from 'date-fns';
 import { auth } from '../firebase';
 import { resolveDependencies } from '../utils/dependencies';
+import { formatLoggedHours, formatHoursBreakdown, roundHours } from '../utils/time';
 
 interface IssueModalProps {
   isOpen: boolean;
@@ -27,8 +28,14 @@ export const IssueModal: React.FC<IssueModalProps> = ({ isOpen, onClose, onSave,
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [activities, setActivities] = useState<ActivityLog[]>([]);
   const [comments, setComments] = useState<any[]>([]);
+  const [timeLogs, setTimeLogs] = useState<TimeLog[]>([]);
+  const [logHoursInput, setLogHoursInput] = useState('');
+  const [logNoteInput, setLogNoteInput] = useState('');
+  const [logDateInput, setLogDateInput] = useState(() => new Date().toISOString().split('T')[0]);
+  const [isLoggingTime, setIsLoggingTime] = useState(false);
+  const [timeLogError, setTimeLogError] = useState<string | null>(null);
   const [newComment, setNewComment] = useState('');
-  const [activeTab, setActiveTab] = useState<'details' | 'activity' | 'comments'>('details');
+  const [activeTab, setActiveTab] = useState<'details' | 'time' | 'activity' | 'comments'>('details');
   const [isEditing, setIsEditing] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const recognitionRef = React.useRef<any>(null);
@@ -67,15 +74,20 @@ export const IssueModal: React.FC<IssueModalProps> = ({ isOpen, onClose, onSave,
       const unsubscribeComments = api.subscribeToComments(issue.id, (data) => {
         setComments(data);
       });
+      const unsubscribeTimeLogs = api.subscribeToTimeLogs(issue.id, (data) => {
+        setTimeLogs(data);
+      });
       return () => {
         unsubscribeActivities();
         unsubscribeComments();
+        unsubscribeTimeLogs();
       };
     } else {
       setActivities([]);
       setComments([]);
+      setTimeLogs([]);
     }
-  }, [isOpen, issue]);
+  }, [isOpen, issue?.id]);
 
   useEffect(() => {
     if (issue) {
@@ -112,8 +124,12 @@ export const IssueModal: React.FC<IssueModalProps> = ({ isOpen, onClose, onSave,
       setActiveTab('details');
       setIsEditing(true);
     }
+    setLogHoursInput('');
+    setLogNoteInput('');
+    setLogDateInput(new Date().toISOString().split('T')[0]);
+    setTimeLogError(null);
     setShowDeleteConfirm(false);
-  }, [issue, isOpen, defaultType]);
+  }, [issue?.id, isOpen, defaultType]);
 
   if (!isOpen) return null;
 
@@ -218,6 +234,59 @@ export const IssueModal: React.FC<IssueModalProps> = ({ isOpen, onClose, onSave,
     userProfile?.role === 'Manager' || 
     (issue && (userProfile?.uid === issue.assigneeUid || userProfile?.uid === issue.reporterUid));
 
+  const totalLoggedHours = timeLogs.length > 0
+    ? roundHours(timeLogs.reduce((sum, entry) => sum + Number(entry.hours || 0), 0))
+    : roundHours(issue?.totalLoggedHours ?? 0);
+
+  const handleAddTimeLog = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!issue) return;
+    const currentUser = auth.currentUser;
+    if (!currentUser) return;
+
+    const parsedHours = parseFloat(logHoursInput);
+    if (!Number.isFinite(parsedHours) || parsedHours <= 0) {
+      setTimeLogError('Please enter a valid number of hours greater than 0.');
+      return;
+    }
+    if (parsedHours > 1000) {
+      setTimeLogError('A single time entry cannot exceed 1000 hours.');
+      return;
+    }
+
+    setIsLoggingTime(true);
+    setTimeLogError(null);
+    try {
+      await api.logTime(issue.id, currentUser, parsedHours, logNoteInput, logDateInput);
+      setLogHoursInput('');
+      setLogNoteInput('');
+    } catch (err: any) {
+      console.error('Failed to log time', err);
+      setTimeLogError(err?.message || 'Failed to log time. Please try again.');
+    } finally {
+      setIsLoggingTime(false);
+    }
+  };
+
+  const handleQuickHourPreset = (preset: number) => {
+    const current = parseFloat(logHoursInput);
+    const next = Number.isFinite(current) && current > 0 ? roundHours(current + preset) : preset;
+    setLogHoursInput(String(next));
+    setTimeLogError(null);
+  };
+
+  const handleDeleteTimeLogEntry = async (timeLogId: string) => {
+    if (!issue) return;
+    const currentUser = auth.currentUser;
+    if (!currentUser) return;
+    try {
+      await api.deleteTimeLog(issue.id, timeLogId, currentUser);
+    } catch (err) {
+      console.error('Failed to delete time log', err);
+      setTimeLogError('Failed to remove time entry.');
+    }
+  };
+
   return (
     <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
       <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh] relative">
@@ -259,10 +328,10 @@ export const IssueModal: React.FC<IssueModalProps> = ({ isOpen, onClose, onSave,
         </div>
 
         {issue && (
-          <div className="flex border-b border-slate-200 dark:border-slate-700 px-6 bg-slate-50 dark:bg-slate-800/50">
+          <div className="flex border-b border-slate-200 dark:border-slate-700 px-6 bg-slate-50 dark:bg-slate-800/50 overflow-x-auto">
             <button
               onClick={() => setActiveTab('details')}
-              className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+              className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
                 activeTab === 'details'
                   ? 'border-tawny-port text-tawny-port dark:text-white'
                   : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300'
@@ -271,8 +340,27 @@ export const IssueModal: React.FC<IssueModalProps> = ({ isOpen, onClose, onSave,
               Details
             </button>
             <button
+              onClick={() => setActiveTab('time')}
+              className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors flex items-center gap-1.5 whitespace-nowrap ${
+                activeTab === 'time'
+                  ? 'border-tawny-port text-tawny-port dark:text-white'
+                  : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300'
+              }`}
+            >
+              <Timer size={15} />
+              <span>Time Log</span>
+              <span className={clsx(
+                "text-[11px] font-semibold px-1.5 py-0.5 rounded-md",
+                totalLoggedHours > 0
+                  ? "bg-tawny-port/10 text-tawny-port dark:bg-tawny-port/25 dark:text-rose-300"
+                  : "bg-slate-200/70 dark:bg-slate-700 text-slate-500 dark:text-slate-400"
+              )}>
+                {formatLoggedHours(totalLoggedHours)}
+              </span>
+            </button>
+            <button
               onClick={() => setActiveTab('comments')}
-              className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 ${
+              className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 whitespace-nowrap ${
                 activeTab === 'comments'
                   ? 'border-tawny-port text-tawny-port dark:text-white'
                   : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300'
@@ -282,7 +370,7 @@ export const IssueModal: React.FC<IssueModalProps> = ({ isOpen, onClose, onSave,
             </button>
             <button
               onClick={() => setActiveTab('activity')}
-              className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 ${
+              className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 whitespace-nowrap ${
                 activeTab === 'activity'
                   ? 'border-tawny-port text-tawny-port dark:text-white'
                   : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300'
@@ -339,27 +427,53 @@ export const IssueModal: React.FC<IssueModalProps> = ({ isOpen, onClose, onSave,
                   </div>
                 </div>
 
-                <div>
-                  <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-2">Assignee</h3>
-                  {issue.assigneeUid ? (
-                    <div className="flex items-center gap-3">
-                      <Avatar src={issue.assigneePhoto || null} name={issue.assigneeName || 'Unknown'} size="sm" />
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-2">
+                    <div>
+                      <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-2">Assignee</h3>
+                      {issue.assigneeUid ? (
+                        <div className="flex items-center gap-3">
+                          <Avatar src={issue.assigneePhoto || null} name={issue.assigneeName || 'Unknown'} size="sm" />
+                          <div>
+                            <span className="font-medium text-slate-900 dark:text-slate-100 block">{issue.assigneeName}</span>
+                            <span className="text-xs text-slate-500 dark:text-slate-400">
+                              Assigned {format(new Date(issue.assignedAt || issue.created_at), 'MMM d, yyyy · h:mm a')}
+                            </span>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400">
+                          <div className="w-8 h-8 rounded-full border-2 border-dashed border-slate-300 dark:border-slate-600 flex items-center justify-center">
+                            <User size={14} />
+                          </div>
+                          <span className="italic text-sm">Unassigned</span>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="bg-slate-50 dark:bg-slate-900/50 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700/60 flex items-center justify-between gap-4 sm:min-w-[210px]">
                       <div>
-                        <span className="font-medium text-slate-900 dark:text-slate-100 block">{issue.assigneeName}</span>
-                        <span className="text-xs text-slate-500 dark:text-slate-400">
-                          Assigned {format(new Date(issue.assignedAt || issue.created_at), 'MMM d, yyyy · h:mm a')}
-                        </span>
+                        <span className="block text-xs font-medium text-slate-500 dark:text-slate-400">Logged Time</span>
+                        <div className="flex items-baseline gap-1.5 mt-0.5">
+                          <span className="text-base font-bold text-slate-900 dark:text-white">
+                            {formatLoggedHours(totalLoggedHours)}
+                          </span>
+                          {totalLoggedHours > 0 && (
+                            <span className="text-xs text-slate-500 dark:text-slate-400">
+                              ({formatHoursBreakdown(totalLoggedHours)})
+                            </span>
+                          )}
+                        </div>
                       </div>
+                      <button
+                        type="button"
+                        onClick={() => setActiveTab('time')}
+                        className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-tawny-port/10 hover:bg-tawny-port/20 text-tawny-port dark:text-rose-300 text-xs font-semibold transition-colors cursor-pointer"
+                      >
+                        <Plus size={13} />
+                        Log Hours
+                      </button>
                     </div>
-                  ) : (
-                    <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400">
-                      <div className="w-8 h-8 rounded-full border-2 border-dashed border-slate-300 dark:border-slate-600 flex items-center justify-center">
-                        <User size={14} />
-                      </div>
-                      <span className="italic text-sm">Unassigned</span>
-                    </div>
-                  )}
-                </div>
+                  </div>
 
                 {issue.status === 'blocked' && issue.delay_cause && (
                   <div className="bg-amber-50 dark:bg-amber-900/20 p-4 rounded-lg border border-amber-200 dark:border-amber-900/50 mt-6">
@@ -856,6 +970,185 @@ export const IssueModal: React.FC<IssueModalProps> = ({ isOpen, onClose, onSave,
 
             </form>
             )
+          ) : activeTab === 'time' ? (
+            <div className="space-y-6">
+              {/* Total Logged Summary */}
+              <div className="bg-slate-50 dark:bg-slate-900/50 rounded-xl p-4 border border-slate-200 dark:border-slate-700/60 flex flex-wrap items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-tawny-port/10 dark:bg-tawny-port/20 text-tawny-port dark:text-rose-300 flex items-center justify-center shrink-0">
+                    <Timer size={20} />
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Total Time Logged</p>
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-2xl font-bold text-slate-900 dark:text-white">
+                        {formatLoggedHours(totalLoggedHours)}
+                      </span>
+                      {totalLoggedHours > 0 && (
+                        <span className="text-sm text-slate-500 dark:text-slate-400">
+                          ({formatHoursBreakdown(totalLoggedHours)})
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                    {timeLogs.length} {timeLogs.length === 1 ? 'entry' : 'entries'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Log Hours Form */}
+              <form onSubmit={handleAddTimeLog} className="bg-white dark:bg-slate-800/70 rounded-xl p-4 border border-slate-200 dark:border-slate-700 space-y-4">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-200">Log Hours Spent</h3>
+                  <div className="flex items-center gap-1.5">
+                    {[0.25, 0.5, 1, 2].map((preset) => (
+                      <button
+                        key={preset}
+                        type="button"
+                        onClick={() => handleQuickHourPreset(preset)}
+                        className="px-2 py-1 text-xs font-medium rounded-md bg-slate-100 dark:bg-slate-700/70 hover:bg-tawny-port/10 hover:text-tawny-port dark:hover:bg-tawny-port/20 dark:hover:text-rose-300 text-slate-600 dark:text-slate-300 transition-colors cursor-pointer"
+                      >
+                        +{preset}h
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
+                      Hours *
+                    </label>
+                    <input
+                      type="number"
+                      step="0.05"
+                      min="0.05"
+                      max="1000"
+                      required
+                      value={logHoursInput}
+                      onChange={(e) => {
+                        setLogHoursInput(e.target.value);
+                        if (timeLogError) setTimeLogError(null);
+                      }}
+                      placeholder="e.g. 1.5"
+                      className="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-tawny-port focus:border-tawny-port outline-none bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
+                      Work Date
+                    </label>
+                    <input
+                      type="date"
+                      value={logDateInput}
+                      onChange={(e) => setLogDateInput(e.target.value)}
+                      className="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-tawny-port focus:border-tawny-port outline-none bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
+                    Note (optional)
+                  </label>
+                  <input
+                    type="text"
+                    maxLength={500}
+                    value={logNoteInput}
+                    onChange={(e) => setLogNoteInput(e.target.value)}
+                    placeholder="What did you work on?"
+                    className="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-tawny-port focus:border-tawny-port outline-none bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100"
+                  />
+                </div>
+
+                {timeLogError && (
+                  <p className="text-xs text-red-600 dark:text-red-400 font-medium">{timeLogError}</p>
+                )}
+
+                <div className="flex justify-end">
+                  <button
+                    type="submit"
+                    disabled={isLoggingTime || !logHoursInput}
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-tawny-port hover:bg-tawny-port/90 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium transition-colors shadow-sm cursor-pointer"
+                  >
+                    <Plus size={16} />
+                    <span>{isLoggingTime ? 'Logging...' : 'Log Time'}</span>
+                  </button>
+                </div>
+              </form>
+
+              {/* Time Entries History */}
+              <div className="space-y-3">
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                  Logged Entries
+                </h3>
+                {timeLogs.length === 0 ? (
+                  <div className="text-center py-8 bg-slate-50/70 dark:bg-slate-900/30 rounded-xl border border-dashed border-slate-200 dark:border-slate-700/60 text-slate-500 dark:text-slate-400">
+                    <Timer className="mx-auto h-9 w-9 opacity-25 mb-2" />
+                    <p className="text-sm font-medium">No hours logged yet</p>
+                    <p className="text-xs mt-0.5 text-slate-400">Use the form above to record time spent on this issue.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2.5">
+                    {timeLogs.map((entry) => {
+                      const canRemoveEntry = auth.currentUser?.uid === entry.userId || userProfile?.role === 'Admin';
+                      return (
+                        <div
+                          key={entry.id}
+                          className="flex items-start justify-between gap-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200/70 dark:border-slate-700/50"
+                        >
+                          <div className="flex items-start gap-3 min-w-0">
+                            <Avatar src={entry.userPhoto || null} name={entry.userName} size="sm" className="shrink-0 mt-0.5" />
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="text-sm font-medium text-slate-900 dark:text-slate-100">{entry.userName}</span>
+                                <span className="text-xs text-slate-400 dark:text-slate-500">
+                                  {entry.date ? format(new Date(`${entry.date}T00:00:00`), 'MMM d, yyyy') : ''}
+                                </span>
+                                <span
+                                  className="text-[11px] text-slate-400 dark:text-slate-500"
+                                  title={new Date(entry.timestamp).toLocaleString()}
+                                >
+                                  · {formatDistanceToNow(new Date(entry.timestamp), { addSuffix: true })}
+                                </span>
+                              </div>
+                              {entry.note && (
+                                <p className="text-xs text-slate-600 dark:text-slate-300 mt-1 break-words">
+                                  {entry.note}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2 shrink-0">
+                            <span
+                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-tawny-port/10 text-tawny-port dark:bg-tawny-port/20 dark:text-rose-300 text-xs font-bold"
+                              title={formatHoursBreakdown(entry.hours)}
+                            >
+                              <Timer size={12} />
+                              {formatLoggedHours(entry.hours)}
+                            </span>
+                            {canRemoveEntry && (
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteTimeLogEntry(entry.id)}
+                                className="p-1.5 text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors cursor-pointer"
+                                title="Delete time entry"
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
           ) : activeTab === 'activity' ? (
             <div className="space-y-6">
               {activities.length === 0 ? (

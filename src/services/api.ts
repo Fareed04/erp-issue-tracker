@@ -11,11 +11,13 @@ import {
   getDoc,
   setDoc,
   onSnapshot,
-  where
+  where,
+  runTransaction
 } from 'firebase/firestore';
 import { db } from '../firebase';
-import { Issue, CreateIssuePayload, BulkUpdatePayload, UserProfile, ActivityLog, Comment, AppNotification } from '../types';
+import { Issue, CreateIssuePayload, BulkUpdatePayload, UserProfile, ActivityLog, Comment, AppNotification, TimeLog } from '../types';
 import { sendEmail, sendTestEmail, fetchEmailLogs } from './email';
+import { roundHours, formatLoggedHours } from '../utils/time';
 
 export { sendEmail, sendTestEmail, fetchEmailLogs };
 
@@ -132,6 +134,106 @@ export const subscribeToComments = (issueId: string, callback: (comments: Commen
   });
 };
 
+export const subscribeToTimeLogs = (issueId: string, callback: (logs: TimeLog[]) => void) => {
+  const q = query(collection(db, ISSUES_COLLECTION, issueId, 'timeLogs'), orderBy('timestamp', 'desc'));
+  return onSnapshot(q, (snapshot) => {
+    const logs = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as TimeLog));
+    callback(logs);
+  });
+};
+
+export const logTime = async (
+  issueId: string,
+  user: { uid: string; displayName: string | null; photoURL: string | null },
+  hours: number,
+  note?: string,
+  date?: string
+): Promise<TimeLog> => {
+  const cleanHours = roundHours(hours);
+  if (cleanHours <= 0 || cleanHours > 1000) {
+    throw new Error('Logged hours must be greater than 0 and at most 1000.');
+  }
+
+  const trimmedNote = note?.trim() ? note.trim().slice(0, 500) : null;
+  const logDate = date || new Date().toISOString().split('T')[0];
+  const now = new Date().toISOString();
+
+  const issueRef = doc(db, ISSUES_COLLECTION, issueId);
+  const timeLogRef = doc(collection(db, ISSUES_COLLECTION, issueId, 'timeLogs'));
+
+  const timeLogData: Omit<TimeLog, 'id'> = {
+    issueId,
+    userId: user.uid,
+    userName: user.displayName || 'Anonymous',
+    userPhoto: user.photoURL || null,
+    hours: cleanHours,
+    note: trimmedNote,
+    date: logDate,
+    timestamp: now,
+  };
+
+  await runTransaction(db, async (tx) => {
+    const issueSnap = await tx.get(issueRef);
+    if (!issueSnap.exists()) {
+      throw new Error('Issue not found.');
+    }
+    const currentTotal = Number(issueSnap.data().totalLoggedHours || 0);
+    const nextTotal = roundHours(currentTotal + cleanHours);
+
+    tx.set(timeLogRef, timeLogData);
+    tx.update(issueRef, {
+      totalLoggedHours: nextTotal,
+      updated_at: now,
+    });
+  });
+
+  await logActivity(
+    issueId,
+    user,
+    'logged_time',
+    `Logged ${formatLoggedHours(cleanHours)}${trimmedNote ? ` — "${trimmedNote}"` : ''}`
+  );
+
+  return { id: timeLogRef.id, ...timeLogData };
+};
+
+export const deleteTimeLog = async (
+  issueId: string,
+  timeLogId: string,
+  user: { uid: string; displayName: string | null; photoURL: string | null }
+): Promise<void> => {
+  const issueRef = doc(db, ISSUES_COLLECTION, issueId);
+  const timeLogRef = doc(db, ISSUES_COLLECTION, issueId, 'timeLogs', timeLogId);
+  const now = new Date().toISOString();
+
+  let removedHours = 0;
+
+  await runTransaction(db, async (tx) => {
+    const [issueSnap, logSnap] = await Promise.all([tx.get(issueRef), tx.get(timeLogRef)]);
+    if (!issueSnap.exists() || !logSnap.exists()) return;
+
+    const logData = logSnap.data() as Omit<TimeLog, 'id'>;
+    removedHours = Number(logData.hours || 0);
+    const currentTotal = Number(issueSnap.data().totalLoggedHours || 0);
+    const nextTotal = Math.max(0, roundHours(currentTotal - removedHours));
+
+    tx.delete(timeLogRef);
+    tx.update(issueRef, {
+      totalLoggedHours: nextTotal,
+      updated_at: now,
+    });
+  });
+
+  if (removedHours > 0) {
+    await logActivity(
+      issueId,
+      user,
+      'removed_time',
+      `Removed ${formatLoggedHours(removedHours)} logged time entry`
+    );
+  }
+};
+
 export const createNotification = async (userId: string, data: Omit<AppNotification, 'id' | 'userId' | 'read' | 'timestamp'>) => {
   const now = new Date().toISOString();
   const notificationData = {
@@ -189,6 +291,7 @@ export const createIssue = async (payload: CreateIssuePayload, user: any): Promi
   const data = {
     ...payload,
     assignedAt: hasAssignee ? (payload.assignedAt || now) : null,
+    totalLoggedHours: roundHours(payload.totalLoggedHours ?? 0),
     created_at: now,
     updated_at: now,
   };
